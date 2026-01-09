@@ -1,0 +1,31 @@
+import { NestFactory, Reflector } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './common/exception-handlers/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+  app.setGlobalPrefix('api');
+  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalFilters(new HttpExceptionFilter());
+  app.useGlobalInterceptors(
+    new ResponseInterceptor());
+  const logger = new Logger()
+  const config = new DocumentBuilder()
+    .setTitle('Badihi API')
+    .setDescription('Badihi API description')
+    .setVersion('1.0')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document);
+  app.enableCors({
+    origin: true,
+    credentials: true,
+  });
+  await app.listen(process.env.PORT ?? 3000);
+  logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
+  logger.log(`documentation is running on: http://localhost:${process.env.PORT ?? 3000}/api/docs`);
+}
+bootstrap();
