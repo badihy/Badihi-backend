@@ -6,12 +6,12 @@ import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    private readonly jwtService: JwtService
 
   ) { }
   async create(createUserDto: CreateUserDto) {
@@ -26,15 +26,16 @@ export class UserService {
     return user;
   }
 
-  login() {
-
-  }
   async findAll() {
     return await this.userModel.find();
   }
 
   async findOne(id: number) {
     return await this.userModel.findById(id);
+  }
+
+  async findOneByEmail(email: string) {
+    return await this.userModel.findOne({ email });
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {

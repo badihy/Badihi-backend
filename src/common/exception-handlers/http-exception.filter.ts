@@ -35,7 +35,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
             exception instanceof MongoServerError &&
             exception.code === 11000
         ) {
-            statusCode = 400;
+            statusCode = 409;
             const field = Object.keys(exception.keyValue)[0];
             message = `Duplicate value for "${field}": "${exception.keyValue[field]}" already exists.`;
         }
