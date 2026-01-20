@@ -7,8 +7,8 @@ export class EmailService {
     constructor(private readonly mailService: MailerService) { }
 
     async sendVerificationEmail(email: string, token: string) {
-        const url = `https://api.badihi.com/auth/verify-email?token=${token}`; // Assuming API domain, app will capture 'verify-email' path
-        const appLink = `https://badihi.com/verify-email?token=${token}`; // This is the URL the app should intercept
+        const url = `https://api.badihy.com/auth/verify-email?token=${token}`; // Assuming API domain, app will capture 'verify-email' path
+        const appLink = `https://api.badihy.com/verify-email?token=${token}`; // This is the URL the app should intercept
 
         await this.mailService.sendMail({
             to: email,
