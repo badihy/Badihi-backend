@@ -8,6 +8,12 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.setGlobalPrefix('api');
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(
@@ -17,6 +23,7 @@ async function bootstrap() {
     .setTitle('Badihi API')
     .setDescription('Badihi API description')
     .setVersion('1.0')
+    .addServer('http://api.badihy.com')
     .addCookieAuth('token', {
       type: 'http',
       scheme: 'bearer',
@@ -35,10 +42,6 @@ async function bootstrap() {
     },
   });
 
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
   await app.listen(process.env.PORT ?? 3000);
   logger.log(`Application is running on: http://localhost:${process.env.PORT ?? 3000}`);
   logger.log(`documentation is running on: http://localhost:${process.env.PORT ?? 3000}/api/docs`);
