@@ -10,6 +10,9 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { CoursesModule } from './courses/courses.module';
+import { CategoriesModule } from './categories/categories.module';
+import { SlidesModule } from './slides/slides.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -46,7 +49,10 @@ import { join } from 'path';
     DatabaseModule,
     UserModule,
     AuthModule,
-    FirebaseModule
+    FirebaseModule,
+    CoursesModule,
+    CategoriesModule,
+    SlidesModule
 
   ],
   controllers: [AppController],

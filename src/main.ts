@@ -23,7 +23,6 @@ async function bootstrap() {
     .setTitle('Badihi API')
     .setDescription('Badihi API description')
     .setVersion('1.0')
-    .addServer('http://api.badihy.com')
     .addCookieAuth('token', {
       type: 'http',
       scheme: 'bearer',
