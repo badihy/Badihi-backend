@@ -21,9 +21,15 @@ export class User {
     email: string;
 
     @Prop({
-        required: true,
+        required: false,
     })
     password: string;
+
+    @Prop({
+        unique: true,
+        sparse: true,
+    })
+    firebaseUid?: string;
 
     @Prop({
         required: false,
@@ -34,6 +40,33 @@ export class User {
         default: false,
     })
     isVerified: boolean;
+    @Prop({
+        required: false,
+    })
+    refreshToken?: string;
+
+    @Prop({
+        required: false,
+    })
+    resetPasswordToken?: string;
+
+    @Prop({
+        required: false,
+    })
+    @Prop({
+        required: false,
+    })
+    resetPasswordExpires?: Date;
+
+    @Prop({
+        required: false,
+    })
+    verificationToken?: string;
+
+    @Prop({
+        required: false,
+    })
+    verificationTokenExpires?: Date;
 }
 export type UserDocument = Document & User;
 export const UserSchema = SchemaFactory.createForClass(User);

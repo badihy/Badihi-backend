@@ -3,6 +3,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
 import { Model } from 'mongoose';
+import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
@@ -30,7 +31,7 @@ export class UserService {
     return await this.userModel.find();
   }
 
-  async findOne(id: number) {
+  async findById(id: string) {
     return await this.userModel.findById(id);
   }
 
@@ -38,8 +39,87 @@ export class UserService {
     return await this.userModel.findOne({ email });
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async findByFirebaseUid(uid: string) {
+    return await this.userModel.findOne({ firebaseUid: uid });
+  }
+
+  async createFromFirebase(payload: any) {
+    const { email, name, uid, picture } = payload;
+    // Try to find by email first to link accounts if possible, otherwise create new
+    let user = await this.findOneByEmail(email);
+    if (user) {
+      user.firebaseUid = uid;
+      if (!user.fullName && name) user.fullName = name;
+      // if (!user.picture && picture) user.picture = picture; // If we had picture
+      return await user.save();
+    }
+
+    const username = email.split('@')[0] + Math.floor(Math.random() * 10000); // Generate simple username
+    return await this.userModel.create({
+      email,
+      username,
+      fullName: name || 'No Name',
+      firebaseUid: uid,
+      isVerified: true, // Firebase emails are usually verified or handled by Firebase
+      // password is optional now
+    });
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    return await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
+  }
+
+  async updateRefreshToken(userId: string, refreshToken: string) {
+    const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
+    return await this.userModel.findByIdAndUpdate(userId, { refreshToken: hashedRefreshToken });
+  }
+
+  async updateResetToken(userId: string, token: string, expires: Date) {
+    return await this.userModel.findByIdAndUpdate(userId, {
+      resetPasswordToken: token,
+      resetPasswordExpires: expires,
+    });
+  }
+
+  async findByResetToken(token: string) {
+    return await this.userModel.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+  }
+
+  async updatePassword(userId: string, password: string) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    return await this.userModel.findByIdAndUpdate(userId, {
+      password: hashedPassword,
+      resetPasswordToken: null,
+      resetPasswordExpires: null,
+    });
+  }
+
+  async generateVerificationToken(userId: string) {
+    const token = crypto.randomBytes(20).toString('hex');
+    const expires = new Date(Date.now() + 24 * 3600000); // 24 hours
+
+    await this.userModel.findByIdAndUpdate(userId, {
+      verificationToken: token,
+      verificationTokenExpires: expires,
+    });
+    return token;
+  }
+
+  async verifyEmail(token: string) {
+    const user = await this.userModel.findOne({
+      verificationToken: token,
+      verificationTokenExpires: { $gt: Date.now() },
+    });
+
+    if (!user) return null;
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpires = undefined;
+    return await user.save();
   }
 
   remove(id: number) {
