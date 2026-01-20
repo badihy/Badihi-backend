@@ -6,6 +6,7 @@ import { FirebaseModule } from '../firebase/firebase.module';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EmailService } from '../common/services/email.service';
 
 @Module({
   imports: [
@@ -22,6 +23,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     forwardRef(() => UserModule)
   ],
   controllers: [AuthController],
-  providers: [AuthService, RefreshTokenStrategy],
+  providers: [AuthService, RefreshTokenStrategy, EmailService],
 })
 export class AuthModule { }

@@ -10,6 +10,7 @@ import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
+import { EmailService } from '../common/services/email.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly emailService: EmailService,
         @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin
     ) { }
 
@@ -137,7 +139,9 @@ export class AuthService {
 
         await this.userService.updateResetToken(user._id.toString(), token, expires);
 
-        // TODO: Send email with token
+        await this.userService.updateResetToken(user._id.toString(), token, expires);
+
+        await this.emailService.sendResetPasswordEmail(user.email, user.fullName || 'User', token);
         console.log(`Reset Password Token for ${user.email}: ${token}`);
 
         return { message: 'Password reset email sent' };

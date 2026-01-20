@@ -5,6 +5,7 @@ import { LoginDto } from '../user/dto/login.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
 export class AuthController {
@@ -20,6 +21,7 @@ export class AuthController {
     return this.authService.loginWithFirebase(firebaseLoginDto);
   }
 
+  @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Get('refresh')
   refreshTokens(@Request() req) {

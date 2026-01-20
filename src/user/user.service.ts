@@ -8,11 +8,13 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { LoginDto } from './dto/login.dto';
+import { EmailService } from '../common/services/email.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly emailService: EmailService,
 
   ) { }
   async create(createUserDto: CreateUserDto) {
@@ -23,6 +25,10 @@ export class UserService {
       username,
       password,
     });
+
+    // Generate token and send welcome email
+    const token = await this.generateVerificationToken(user._id.toString());
+    await this.emailService.sendWelcomeEmail(user.email, user.fullName, token);
 
     return user;
   }

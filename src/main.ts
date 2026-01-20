@@ -17,9 +17,24 @@ async function bootstrap() {
     .setTitle('Badihi API')
     .setDescription('Badihi API description')
     .setVersion('1.0')
+    .addCookieAuth('token', {
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'JWT',
+    })
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      initOAuth: {
+        clientId: 'clientId',
+        clientSecret: 'clientSecret',
+        scopeSeparator: ' ',
+        scopes: ['read', 'write', 'admin'],
+      }
+    },
+  });
+
   app.enableCors({
     origin: true,
     credentials: true,
