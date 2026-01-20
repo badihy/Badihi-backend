@@ -1,5 +1,5 @@
 import { IsNotEmpty, IsString, MinLength } from "class-validator";
-import { Match } from "src/common/decorators/match/match.decorator";
+import { Match } from "../../common/decorators/match/match.decorator";
 
 export class ResetPasswordDto {
     @IsString()

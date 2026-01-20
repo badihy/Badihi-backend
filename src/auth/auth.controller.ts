@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards, Get, Request, Query } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
-import { LoginDto } from 'src/user/dto/login.dto';
+import { LoginDto } from '../user/dto/login.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
