@@ -7,7 +7,12 @@ export class CreateCategoryDto {
     @IsNotEmpty()
     name: string;
 
-    @ApiPropertyOptional({ example: 'https://example.com/image.png' })
+    @ApiPropertyOptional({
+        example: 'https://example.com/image.png',
+        type: String,
+        format: 'binary'
+
+    })
     @IsString()
     @IsOptional()
     image?: string;

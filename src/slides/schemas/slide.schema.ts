@@ -1,4 +1,4 @@
-import { Prop, Schema } from "@nestjs/mongoose";
+import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { SlideType } from "../types/slide-types.enum";
 import { Course } from "src/courses/schemas/course.schema";
 import mongoose from "mongoose";
@@ -53,3 +53,5 @@ export class Slide {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course' })
     course: Course;
 }
+export type SlideDocument = Document & Slide;
+export const SlideSchema = SchemaFactory.createForClass(Slide);

@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Categories')
 @Controller('categories')
@@ -10,9 +11,14 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
+  @UseInterceptors(FileFieldsInterceptor([{
+    name: 'image',
+    maxCount: 1
+  }]))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Create a new category' })
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoriesService.create(createCategoryDto);
+  create(@Body() createCategoryDto: CreateCategoryDto, @UploadedFiles() files: { image: Express.Multer.File[] }) {
+    return this.categoriesService.create(createCategoryDto, files.image[0]);
   }
 
   @Get()
@@ -28,9 +34,16 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileFieldsInterceptor([
+    {
+      name: 'image',
+      maxCount: 1
+    }
+  ]))
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Update a category' })
-  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto) {
-    return this.categoriesService.update(id, updateCategoryDto);
+  update(@Param('id') id: string, @Body() updateCategoryDto: UpdateCategoryDto, @UploadedFiles() files: { image: Express.Multer.File[] }) {
+    return this.categoriesService.update(id, updateCategoryDto, files.image?.[0]);
   }
 
   @Delete(':id')

@@ -9,11 +9,11 @@ export class BunnyService {
     private readonly storageZone: string;
     private readonly apiKey: string;
     private readonly baseUrl: string;
-    private readonly timeout: number = 30000; 
+    private readonly timeout: number = 30000;
 
     constructor(private configService: ConfigService) {
         this.storageZone = this.configService.get<string>('BUNNY_STORAGE_ZONE', 'bsohula');
-        this.apiKey = this.configService.get<string>('BUNNY_API_KEY', 'c7fbeb57-331c-4510-a04d979b0515-1729-4670');
+        this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY', 'c7fbeb57-331c-4510-a04d979b0515-1729-4670');
         this.baseUrl = `https://storage.bunnycdn.com/${this.storageZone}`;
 
         if (!this.apiKey) {

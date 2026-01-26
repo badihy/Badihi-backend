@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -10,9 +11,14 @@ export class CoursesController {
   constructor(private readonly coursesService: CoursesService) { }
 
   @Post()
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'cover', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+  ]))
   @ApiOperation({ summary: 'Create a new course' })
-  create(@Body() createCourseDto: CreateCourseDto) {
-    return this.coursesService.create(createCourseDto);
+  @ApiConsumes('multipart/form-data')
+  create(@Body() createCourseDto: CreateCourseDto, @UploadedFiles() files: { cover: Express.Multer.File[], thumbnail: Express.Multer.File[] }) {
+    return this.coursesService.create(createCourseDto, files);
   }
 
   @Get()

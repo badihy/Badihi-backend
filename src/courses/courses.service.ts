@@ -4,12 +4,18 @@ import { Model } from 'mongoose';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course, CourseDocument } from './schemas/course.schema';
+import { BunnyService } from 'src/common/services/bunny.service';
 
 @Injectable()
 export class CoursesService {
-  constructor(@InjectModel(Course.name) private courseModel: Model<CourseDocument>) { }
+  constructor(
+    @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
+    private readonly bunnyService: BunnyService
+  ) { }
 
-  async create(createCourseDto: CreateCourseDto): Promise<Course> {
+  async create(createCourseDto: CreateCourseDto, files: { cover: Express.Multer.File[], thumbnail: Express.Multer.File[] }): Promise<Course> {
+    const { cover, thumbnail } = files;
+
     const createdCourse = new this.courseModel(createCourseDto);
     return createdCourse.save();
   }
