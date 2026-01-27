@@ -3,7 +3,7 @@ import { CoursesService } from './courses.service';
 import { CoursesController } from './courses.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CourseSchema } from './schemas/course.schema';
-import { BunnyService } from 'src/common/services/bunny.service';
+import { BunnyService } from '../common/services/bunny.service';
 
 @Module({
   imports: [MongooseModule.forFeature([{ name: 'Course', schema: CourseSchema }])],

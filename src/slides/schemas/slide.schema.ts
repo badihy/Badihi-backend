@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { SlideType } from "../types/slide-types.enum";
-import { Course } from "src/courses/schemas/course.schema";
+import { Course } from "../../courses/schemas/course.schema";
 import mongoose from "mongoose";
 
 @Schema({ timestamps: true })

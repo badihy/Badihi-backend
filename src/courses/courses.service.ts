@@ -4,7 +4,7 @@ import { Model } from 'mongoose';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { Course, CourseDocument } from './schemas/course.schema';
-import { BunnyService } from 'src/common/services/bunny.service';
+import { BunnyService } from '../common/services/bunny.service';
 
 @Injectable()
 export class CoursesService {
