@@ -26,7 +26,7 @@ export class AppController {
     try {
       await this.authService.verifyEmail(token);
       
-      // Return HTML response for browser, app will intercept before this
+      // Return HTML with redirect to mobile app
       return res.send(`
         <!DOCTYPE html>
         <html lang="ar" dir="rtl">
@@ -61,14 +61,94 @@ export class AppController {
               font-size: 64px;
               margin-bottom: 20px;
             }
+            .spinner {
+              border: 4px solid #f3f3f3;
+              border-top: 4px solid #5e35b1;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin: 20px auto;
+            }
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+            .open-app-btn {
+              background-color: #5e35b1;
+              color: white;
+              padding: 12px 24px;
+              border: none;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 700;
+              cursor: pointer;
+              margin-top: 20px;
+              font-family: 'Tajawal', sans-serif;
+            }
+            .open-app-btn:hover {
+              background-color: #4527a0;
+            }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="success-icon">✅</div>
             <h1>تم التحقق من البريد الإلكتروني بنجاح!</h1>
-            <p>يمكنك الآن إغلاق هذه الصفحة والعودة إلى التطبيق.</p>
+            <p>جاري فتح التطبيق...</p>
+            <div class="spinner"></div>
+            <button class="open-app-btn" onclick="openApp()">افتح التطبيق</button>
           </div>
+          <script>
+            let appOpened = false;
+            
+            // Detect if app opened (page loses focus)
+            window.addEventListener('blur', function() {
+              appOpened = true;
+            });
+            
+            // Try multiple methods to open the app
+            function openApp() {
+              // Method 1: Custom URL scheme (badihi://email-verified)
+              const customScheme = 'badihi://email-verified?success=true';
+              
+              // Method 2: Android Intent URL (for Android devices)
+              const intentUrl = 'intent://verify-email?success=true#Intent;scheme=https;package=com.badihi.app;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.badihi.app;end';
+              
+              // Method 3: Universal link (should be intercepted by App Links)
+              const universalLink = 'https://api.badihy.com/verify-email?success=true&verified=true';
+              
+              // Detect Android
+              const isAndroid = /Android/i.test(navigator.userAgent);
+              
+              if (isAndroid) {
+                // Try Intent URL first on Android (most reliable)
+                window.location.href = intentUrl;
+                
+                // Fallback to custom scheme
+                setTimeout(function() {
+                  if (!appOpened && document.hasFocus()) {
+                    window.location.href = customScheme;
+                  }
+                }, 500);
+              } else {
+                // Try custom scheme first on iOS/other
+                window.location.href = customScheme;
+                
+                // Fallback to universal link
+                setTimeout(function() {
+                  if (!appOpened && document.hasFocus()) {
+                    window.location.href = universalLink;
+                  }
+                }, 500);
+              }
+            }
+            
+            // Auto-trigger on page load
+            window.onload = function() {
+              setTimeout(openApp, 300);
+            };
+          </script>
         </body>
         </html>
       `);

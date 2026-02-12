@@ -2,12 +2,19 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/exception-handlers/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, Logger, ValidationPipe, RequestMethod } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
+  // Exclude deep link routes from global prefix - they need to be at root for App Links to work
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'verify-email', method: RequestMethod.GET },
+      { path: 'reset-password', method: RequestMethod.GET },
+      { path: '.well-known', method: RequestMethod.GET },
+    ],
+  });
   app.enableCors({
     origin: true,
     credentials: true,
