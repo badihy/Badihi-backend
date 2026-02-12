@@ -8,22 +8,13 @@ import { getResetPasswordEmailHtml } from '../templates/reset-password.template'
 export class EmailService {
     constructor(private readonly mailService: MailerService) { }
 
-    async sendVerificationEmail(email: string, token: string) {
-        const url = `https://api.badihy.com/auth/verify-email?token=${token}`; // Assuming API domain, app will capture 'verify-email' path
-        const appLink = `https://api.badihy.com/verify-email?token=${token}`; // This is the URL the app should intercept
-
-        await this.mailService.sendMail({
-            to: email,
-            subject: 'Verify your email',
-            html: `
-                <h3>Welcome to Badihi!</h3>
-                <p>Please click the link below to verify your email address:</p>
-                <a href="${appLink}">Verify Email</a>
-                <p>If the link above doesn't work, verify via API: ${url}</p>
-            `,
-        });
-    }
-
+    /**
+     * Sends welcome email with verification link
+     * Used during user registration
+     * @param email User's email address
+     * @param name User's full name
+     * @param token Verification token
+     */
     async sendWelcomeEmail(email: string, name: string, token: string) {
         // Verification link (Direct App Link)
         const appLink = `https://api.badihy.com/verify-email?token=${token}`;

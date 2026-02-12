@@ -27,6 +27,11 @@ export class AuthService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
+        
+        if (!user.password) {
+            throw new UnauthorizedException('Invalid Credentials');
+        }
+        
         const isMatch = await bcrypt.compare(loginDto.password, user.password);
         if (!isMatch) {
             throw new UnauthorizedException('Invalid Credentials');
@@ -138,9 +143,6 @@ export class AuthService {
         const expires = new Date(Date.now() + 3600000); // 1 hour
 
         await this.userService.updateResetToken(user._id.toString(), token, expires);
-
-        await this.userService.updateResetToken(user._id.toString(), token, expires);
-
         await this.emailService.sendResetPasswordEmail(user.email, user.fullName || 'User', token);
         console.log(`Reset Password Token for ${user.email}: ${token}`);
 

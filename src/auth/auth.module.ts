@@ -24,5 +24,6 @@ import { EmailService } from '../common/services/email.service';
   ],
   controllers: [AuthController],
   providers: [AuthService, RefreshTokenStrategy, EmailService],
+  exports: [AuthService],
 })
 export class AuthModule { }

@@ -17,6 +17,16 @@ export class UserService {
     private readonly emailService: EmailService,
 
   ) { }
+
+  /**
+   * Creates a new user account
+   * - Generates a unique username from email
+   * - Hashes the password
+   * - Creates user with isVerified: false by default
+   * - Generates verification token and sends welcome email with verification link
+   * @param createUserDto User creation data
+   * @returns Created user document
+   */
   async create(createUserDto: CreateUserDto) {
     const username = createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
     const password = await bcrypt.hash(createUserDto.password, 10);
@@ -26,7 +36,7 @@ export class UserService {
       password,
     });
 
-    // Generate token and send welcome email
+    // Generate verification token and send welcome email with deep link
     const token = await this.generateVerificationToken(user._id.toString());
     await this.emailService.sendWelcomeEmail(user.email, user.fullName, token);
 
@@ -103,6 +113,12 @@ export class UserService {
     });
   }
 
+  /**
+   * Generates a verification token for email verification
+   * Token expires in 24 hours
+   * @param userId User ID to generate token for
+   * @returns Generated verification token
+   */
   async generateVerificationToken(userId: string) {
     const token = crypto.randomBytes(20).toString('hex');
     const expires = new Date(Date.now() + 24 * 3600000); // 24 hours
@@ -114,6 +130,12 @@ export class UserService {
     return token;
   }
 
+  /**
+   * Verifies user email using verification token
+   * Sets isVerified to true and clears verification token fields
+   * @param token Verification token from email link
+   * @returns User document if verification successful, null otherwise
+   */
   async verifyEmail(token: string) {
     const user = await this.userModel.findOne({
       verificationToken: token,
