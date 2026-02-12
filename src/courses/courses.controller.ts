@@ -13,12 +13,12 @@ export class CoursesController {
 
   @Post()
   @UseInterceptors(FileFieldsInterceptor([
-    { name: 'cover', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 },
+    { name: 'coverImage', maxCount: 1 },
+    { name: 'thumbnailImage', maxCount: 1 },
   ]))
   @ApiOperation({ summary: 'Create a new course' })
   @ApiConsumes('multipart/form-data')
-  create(@Body() createCourseDto: CreateCourseDto, @UploadedFiles() files: { cover: Express.Multer.File[], thumbnail: Express.Multer.File[] }) {
+  create(@Body() createCourseDto: CreateCourseDto, @UploadedFiles() files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] }) {
     return this.coursesService.create(createCourseDto, files);
   }
 

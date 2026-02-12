@@ -22,14 +22,14 @@ export class CoursesService {
     private readonly bunnyService: BunnyService
   ) { }
 
-  async create(createCourseDto: CreateCourseDto, files: { cover: Express.Multer.File[], thumbnail: Express.Multer.File[] }): Promise<Course> {
-    const { cover, thumbnail } = files;
+  async create(createCourseDto: CreateCourseDto, files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] }): Promise<Course> {
+    const { coverImage, thumbnailImage } = files;
 
     // Upload cover image if provided
     let coverImageUrl = createCourseDto.coverImage;
-    if (cover && cover.length > 0 && cover[0]) {
+    if (coverImage && coverImage.length > 0 && coverImage[0]) {
       try {
-        coverImageUrl = await this.bunnyService.uploadFile(cover[0]);
+        coverImageUrl = await this.bunnyService.uploadFile(coverImage[0]);
       } catch (error) {
         throw new Error(`Failed to upload cover image: ${error.message}`);
       }
@@ -37,9 +37,9 @@ export class CoursesService {
 
     // Upload thumbnail image if provided
     let thumbnailImageUrl = createCourseDto.thumbnailImage;
-    if (thumbnail && thumbnail.length > 0 && thumbnail[0]) {
+    if (thumbnailImage && thumbnailImage.length > 0 && thumbnailImage[0]) {
       try {
-        thumbnailImageUrl = await this.bunnyService.uploadFile(thumbnail[0]);
+        thumbnailImageUrl = await this.bunnyService.uploadFile(thumbnailImage[0]);
       } catch (error) {
         // If cover was uploaded but thumbnail fails, delete the cover image
         if (coverImageUrl && coverImageUrl !== createCourseDto.coverImage) {
