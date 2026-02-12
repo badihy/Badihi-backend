@@ -3,7 +3,7 @@ import { CoursesService } from './courses.service';
 import { CoursesController } from './courses.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CourseSchema } from './schemas/course.schema';
-import { SectionSchema } from './schemas/section.schema';
+import { ChapterSchema } from './schemas/chapter.schema';
 import { LessonSchema } from './schemas/lesson.schema';
 import { QuizSchema } from './schemas/quiz.schema';
 import { BunnyService } from '../common/services/bunny.service';
@@ -12,7 +12,7 @@ import { BunnyService } from '../common/services/bunny.service';
   imports: [
     MongooseModule.forFeature([
       { name: 'Course', schema: CourseSchema },
-      { name: 'Section', schema: SectionSchema },
+      { name: 'Chapter', schema: ChapterSchema },
       { name: 'Lesson', schema: LessonSchema },
       { name: 'Quiz', schema: QuizSchema },
     ])

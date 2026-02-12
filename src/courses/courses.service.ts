@@ -21,7 +21,7 @@ export class CoursesService {
   }
 
   async findAll(): Promise<Course[]> {
-    return await this.courseModel.find().populate('category').exec();
+    return await this.courseModel.find().populate('category chapters').exec();
   }
 
   async findOne(id: string): Promise<Course> {

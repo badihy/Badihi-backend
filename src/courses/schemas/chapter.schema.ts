@@ -1,9 +1,9 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { Course } from "./course.schema";
 
 @Schema({ timestamps: true })
-export class Section {
+export class Chapter {
     @Prop({ required: true })
     title: string;
 
@@ -19,7 +19,7 @@ export class Section {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true })
     course: mongoose.Types.ObjectId;
 
-    // Section can contain either lessons OR a quiz, but not both
+    // Chapter can contain either lessons OR a quiz, but not both
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson' }], required: false })
     lessons?: mongoose.Types.ObjectId[];
 
@@ -30,5 +30,5 @@ export class Section {
     isCompleted: boolean;
 }
 
-export type SectionDocument = Section & Document;
-export const SectionSchema = SchemaFactory.createForClass(Section);
+export type ChapterDocument = Chapter & Document;
+export const ChapterSchema = SchemaFactory.createForClass(Chapter);

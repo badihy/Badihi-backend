@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { Category } from "src/categories/schemas/category.schema";
-import { Section } from "./section.schema";
+import { Chapter } from "./chapter.schema";
 
 @Schema({ timestamps: true })
 export class Course {
@@ -32,9 +32,9 @@ export class Course {
     @Prop({ required: false })
     thumbnailImage: string;
 
-    // Course now has sections instead of slides directly
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Section' }], required: false })
-    sections?: mongoose.Types.ObjectId[];
+    // Course now has chapters instead of slides directly
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chapter' }], required: false })
+    chapters?: mongoose.Types.ObjectId[];
 
 }
 

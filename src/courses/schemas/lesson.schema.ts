@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 @Schema({ timestamps: true })
 export class Lesson {
@@ -15,8 +15,8 @@ export class Lesson {
     })
     orderIndex: number;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Section', required: true })
-    section: mongoose.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Chapter', required: true })
+    chapter: mongoose.Types.ObjectId;
 
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Slide' }], required: false })
     slides?: mongoose.Types.ObjectId[];

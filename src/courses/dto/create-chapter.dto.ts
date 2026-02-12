@@ -1,7 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsNotEmpty, IsString, IsOptional, IsNumber, IsMongoId } from 'class-validator';
 
-export class CreateSectionDto {
+export class CreateChapterDto {
     @ApiProperty({ example: 'Introduction to Programming' })
     @IsString()
     @IsNotEmpty()

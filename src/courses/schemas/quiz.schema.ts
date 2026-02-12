@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 // QuizQuestion as a nested schema
 const QuizQuestionSchema = new mongoose.Schema({
@@ -18,8 +18,8 @@ export class Quiz {
     @Prop({ required: false })
     description?: string;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Section', required: true })
-    section: mongoose.Types.ObjectId;
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Chapter', required: true })
+    chapter: mongoose.Types.ObjectId;
 
     @Prop({ type: [QuizQuestionSchema], required: true })
     questions: mongoose.Types.Array<any>;

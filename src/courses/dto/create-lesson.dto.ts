@@ -17,10 +17,10 @@ export class CreateLessonDto {
     @IsNotEmpty()
     orderIndex: number;
 
-    @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'Section ID' })
+    @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'Chapter ID' })
     @IsMongoId()
     @IsNotEmpty()
-    section: string;
+    chapter: string;
 
     @ApiPropertyOptional({ example: 15, description: 'Duration in minutes' })
     @IsNumber()

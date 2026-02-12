@@ -41,10 +41,10 @@ export class CreateQuizDto {
     @IsOptional()
     description?: string;
 
-    @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'Section ID' })
+    @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'Chapter ID' })
     @IsMongoId()
     @IsNotEmpty()
-    section: string;
+    chapter: string;
 
     @ApiProperty({ type: [QuizQuestionDto] })
     @IsArray()
