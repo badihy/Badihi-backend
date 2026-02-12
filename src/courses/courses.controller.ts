@@ -23,13 +23,10 @@ export class CoursesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all courses with flexible population' })
-  @ApiQuery({ name: 'populate', enum: PopulateLevel, required: false, description: 'Level of nested population' })
-  @ApiQuery({ name: 'includeCategory', type: Boolean, required: false, description: 'Include category information' })
-  async findAll(@Query() query: CourseQueryDto) {
-    const populateLevel = query.populate || PopulateLevel.CHAPTERS;
-    const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
-    return await this.coursesService.findAll(populateLevel, includeCategory);
+  @ApiOperation({ summary: 'Get all courses with full population' })
+  @ApiQuery({ name: 'category', type: String, required: false, description: 'Filter by category ID' })
+  async findAll(@Query('category') categoryId?: string) {
+    return await this.coursesService.findAll(PopulateLevel.FULL, true, categoryId);
   }
 
   @Get(':id')
@@ -76,9 +73,18 @@ export class CoursesController {
   }
 
   @Patch(':id')
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'cover', maxCount: 1 },
+    { name: 'thumbnail', maxCount: 1 },
+  ]))
   @ApiOperation({ summary: 'Update a course' })
-  async update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
-    return this.coursesService.update(id, updateCourseDto);
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string, 
+    @Body() updateCourseDto: UpdateCourseDto,
+    @UploadedFiles() files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] }
+  ) {
+    return this.coursesService.update(id, updateCourseDto, files);
   }
 
   @Delete(':id')

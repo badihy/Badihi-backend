@@ -9,6 +9,7 @@ import { Quiz, QuizDocument } from '../courses/schemas/quiz.schema';
 import { Slide, SlideDocument } from '../slides/schemas/slide.schema';
 import { Category, CategoryDocument } from '../categories/schemas/category.schema';
 import { SlideType } from '../slides/types/slide-types.enum';
+import { CourseLevel } from '../courses/types/course-level.enum';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -55,6 +56,7 @@ async function bootstrap() {
     const jsCourseData = {
       name: 'JavaScript Basics',
       description: 'Learn the fundamentals of JavaScript programming language',
+      shortDescription: 'Master JavaScript from scratch and build your first interactive web applications',
       price: 49.99,
       category: programmingCategory._id,
       willLearn: [
@@ -69,6 +71,13 @@ async function bootstrap() {
         'Text editor (VS Code recommended)',
         'Web browser'
       ],
+      targetAudience: [
+        'Beginners',
+        'Students',
+        'Aspiring Developers',
+        'Career Changers'
+      ],
+      level: CourseLevel.BEGINNER,
       estimationTime: '10 hours',
       coverImage: 'https://example.com/js-cover.jpg',
       thumbnailImage: 'https://example.com/js-thumb.jpg',
@@ -230,6 +239,7 @@ async function bootstrap() {
     const reactCourseData = {
       name: 'React Fundamentals',
       description: 'Master React.js and build modern user interfaces',
+      shortDescription: 'Build dynamic and interactive web applications using React.js framework',
       price: 79.99,
       category: webDevCategory._id,
       willLearn: [
@@ -244,6 +254,13 @@ async function bootstrap() {
         'HTML/CSS knowledge',
         'Node.js installed'
       ],
+      targetAudience: [
+        'Frontend Developers',
+        'Web Developers',
+        'JavaScript Developers',
+        'UI/UX Developers'
+      ],
+      level: CourseLevel.INTERMEDIATE,
       estimationTime: '15 hours',
       coverImage: 'https://example.com/react-cover.jpg',
       thumbnailImage: 'https://example.com/react-thumb.jpg',

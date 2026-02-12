@@ -25,7 +25,43 @@ export class CoursesService {
   async create(createCourseDto: CreateCourseDto, files: { cover: Express.Multer.File[], thumbnail: Express.Multer.File[] }): Promise<Course> {
     const { cover, thumbnail } = files;
 
-    const createdCourse = new this.courseModel(createCourseDto);
+    // Upload cover image if provided
+    let coverImageUrl = createCourseDto.coverImage;
+    if (cover && cover.length > 0 && cover[0]) {
+      try {
+        coverImageUrl = await this.bunnyService.uploadFile(cover[0]);
+      } catch (error) {
+        throw new Error(`Failed to upload cover image: ${error.message}`);
+      }
+    }
+
+    // Upload thumbnail image if provided
+    let thumbnailImageUrl = createCourseDto.thumbnailImage;
+    if (thumbnail && thumbnail.length > 0 && thumbnail[0]) {
+      try {
+        thumbnailImageUrl = await this.bunnyService.uploadFile(thumbnail[0]);
+      } catch (error) {
+        // If cover was uploaded but thumbnail fails, delete the cover image
+        if (coverImageUrl && coverImageUrl !== createCourseDto.coverImage) {
+          try {
+            await this.bunnyService.deleteFile(coverImageUrl);
+          } catch (deleteError) {
+            // Log but don't throw - we want to throw the original error
+            console.error('Failed to delete cover image after thumbnail upload failure:', deleteError);
+          }
+        }
+        throw new Error(`Failed to upload thumbnail image: ${error.message}`);
+      }
+    }
+
+    // Create course with uploaded image URLs
+    const courseData = {
+      ...createCourseDto,
+      coverImage: coverImageUrl,
+      thumbnailImage: thumbnailImageUrl,
+    };
+
+    const createdCourse = new this.courseModel(courseData);
     return createdCourse.save();
   }
 
@@ -33,9 +69,15 @@ export class CoursesService {
    * Get all courses with flexible population
    * @param populateLevel - Level of nested population
    * @param includeCategory - Whether to include category
+   * @param categoryId - Optional category ID to filter by
    */
-  async findAll(populateLevel: PopulateLevel = PopulateLevel.CHAPTERS, includeCategory: boolean = true): Promise<any[]> {
+  async findAll(populateLevel: PopulateLevel = PopulateLevel.CHAPTERS, includeCategory: boolean = true, categoryId?: string): Promise<any[]> {
     let query = this.courseModel.find();
+    
+    // Filter by category if provided
+    if (categoryId) {
+      query = query.where('category').equals(categoryId);
+    }
 
     // Populate category if requested
     if (includeCategory) {
@@ -237,12 +279,15 @@ export class CoursesService {
       _id: course._id,
       name: course.name,
       description: course.description,
+      shortDescription: course.shortDescription,
       price: course.price,
       estimationTime: course.estimationTime,
       coverImage: course.coverImage,
       thumbnailImage: course.thumbnailImage,
       willLearn: course.willLearn,
       requirements: course.requirements,
+      targetAudience: course.targetAudience,
+      level: course.level,
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
     };
@@ -379,8 +424,74 @@ export class CoursesService {
     return courses.map(course => this.mapCourseResponse(course, populateLevel));
   }
 
-  async update(id: string, updateCourseDto: UpdateCourseDto): Promise<Course> {
-    const updatedCourse = await this.courseModel.findByIdAndUpdate(id, updateCourseDto, { new: true }).exec();
+  async update(
+    id: string, 
+    updateCourseDto: UpdateCourseDto, 
+    files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] }
+  ): Promise<Course> {
+    // Get existing course to check for old images
+    const existingCourse = await this.courseModel.findById(id).exec();
+    if (!existingCourse) {
+      throw new NotFoundException(`Course with ID ${id} not found`);
+    }
+
+    const updateData: any = { ...updateCourseDto };
+
+    // Handle cover image upload
+    if (files?.cover && files.cover.length > 0 && files.cover[0]) {
+      try {
+        // Upload new cover image
+        const newCoverUrl = await this.bunnyService.uploadFile(files.cover[0]);
+        updateData.coverImage = newCoverUrl;
+
+        // Delete old cover image if it exists and is different
+        if (existingCourse.coverImage && 
+            existingCourse.coverImage !== updateCourseDto.coverImage &&
+            existingCourse.coverImage.startsWith('https://')) {
+          try {
+            await this.bunnyService.deleteFile(existingCourse.coverImage);
+          } catch (deleteError) {
+            // Log but don't throw - we've already uploaded the new image
+            console.error('Failed to delete old cover image:', deleteError);
+          }
+        }
+      } catch (error) {
+        throw new Error(`Failed to upload cover image: ${error.message}`);
+      }
+    }
+
+    // Handle thumbnail image upload
+    if (files?.thumbnail && files.thumbnail.length > 0 && files.thumbnail[0]) {
+      try {
+        // Upload new thumbnail image
+        const newThumbnailUrl = await this.bunnyService.uploadFile(files.thumbnail[0]);
+        updateData.thumbnailImage = newThumbnailUrl;
+
+        // Delete old thumbnail image if it exists and is different
+        if (existingCourse.thumbnailImage && 
+            existingCourse.thumbnailImage !== updateCourseDto.thumbnailImage &&
+            existingCourse.thumbnailImage.startsWith('https://')) {
+          try {
+            await this.bunnyService.deleteFile(existingCourse.thumbnailImage);
+          } catch (deleteError) {
+            // Log but don't throw - we've already uploaded the new image
+            console.error('Failed to delete old thumbnail image:', deleteError);
+          }
+        }
+      } catch (error) {
+        // If cover was uploaded but thumbnail fails, try to clean up
+        if (updateData.coverImage && updateData.coverImage !== existingCourse.coverImage) {
+          try {
+            await this.bunnyService.deleteFile(updateData.coverImage);
+          } catch (cleanupError) {
+            console.error('Failed to cleanup cover image after thumbnail upload failure:', cleanupError);
+          }
+        }
+        throw new Error(`Failed to upload thumbnail image: ${error.message}`);
+      }
+    }
+
+    const updatedCourse = await this.courseModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedCourse) {
       throw new NotFoundException(`Course with ID ${id} not found`);
     }
@@ -388,10 +499,35 @@ export class CoursesService {
   }
 
   async remove(id: string): Promise<Course> {
-    const deletedCourse = await this.courseModel.findByIdAndDelete(id).exec();
-    if (!deletedCourse) {
+    const courseToDelete = await this.courseModel.findById(id).exec();
+    if (!courseToDelete) {
       throw new NotFoundException(`Course with ID ${id} not found`);
     }
-    return deletedCourse;
+
+    // Delete images from BunnyCDN if they exist
+    const deletePromises: Promise<void>[] = [];
+    
+    if (courseToDelete.coverImage && courseToDelete.coverImage.startsWith('https://')) {
+      deletePromises.push(
+        this.bunnyService.deleteFile(courseToDelete.coverImage).catch(error => {
+          console.error(`Failed to delete cover image: ${courseToDelete.coverImage}`, error);
+        })
+      );
+    }
+
+    if (courseToDelete.thumbnailImage && courseToDelete.thumbnailImage.startsWith('https://')) {
+      deletePromises.push(
+        this.bunnyService.deleteFile(courseToDelete.thumbnailImage).catch(error => {
+          console.error(`Failed to delete thumbnail image: ${courseToDelete.thumbnailImage}`, error);
+        })
+      );
+    }
+
+    // Wait for image deletions (don't fail if deletion fails)
+    await Promise.allSettled(deletePromises);
+
+    // Delete the course
+    const deletedCourse = await this.courseModel.findByIdAndDelete(id).exec();
+    return deletedCourse!;
   }
 }

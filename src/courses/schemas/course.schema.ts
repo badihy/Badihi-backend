@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { Document } from "mongoose";
 import { Category } from "src/categories/schemas/category.schema";
 import { Chapter } from "./chapter.schema";
+import { CourseLevel } from "../types/course-level.enum";
 
 @Schema({ timestamps: true })
 export class Course {
@@ -10,6 +11,9 @@ export class Course {
 
     @Prop()
     description: string;
+
+    @Prop({ required: false })
+    shortDescription?: string;
 
     @Prop()
     price: number;
@@ -22,6 +26,12 @@ export class Course {
 
     @Prop({ type: [String], required: false })
     requirements: string[];
+
+    @Prop({ type: [String], required: false })
+    targetAudience?: string[];
+
+    @Prop({ type: String, enum: CourseLevel, required: false })
+    level?: CourseLevel;
 
     @Prop({ required: true })
     estimationTime: string; // time in hours
