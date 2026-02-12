@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose from "mongoose";
 import { Category } from "src/categories/schemas/category.schema";
-import { Slide } from "src/slides/schemas/slide.schema";
+import { Section } from "./section.schema";
 
 @Schema({ timestamps: true })
 export class Course {
@@ -15,7 +15,7 @@ export class Course {
     price: number;
 
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Category' })
-    category: Category;
+    category: mongoose.Types.ObjectId;
 
     @Prop({ type: [String], required: false })
     willLearn: string[];
@@ -24,7 +24,7 @@ export class Course {
     requirements: string[];
 
     @Prop({ required: true })
-    estimationTime: string; // time in hourse
+    estimationTime: string; // time in hours
 
     @Prop({ required: false })
     coverImage: string;
@@ -32,8 +32,9 @@ export class Course {
     @Prop({ required: false })
     thumbnailImage: string;
 
-    @Prop({ type: [Slide], required: false })
-    slides: Slide[];
+    // Course now has sections instead of slides directly
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Section' }], required: false })
+    sections?: mongoose.Types.ObjectId[];
 
 }
 

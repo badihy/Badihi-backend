@@ -1,7 +1,7 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import { SlideType } from "../types/slide-types.enum";
-import { Course } from "../../courses/schemas/course.schema";
-import mongoose from "mongoose";
+import { Lesson } from "../../courses/schemas/lesson.schema";
+import mongoose, { Document } from "mongoose";
 
 @Schema({ timestamps: true })
 export class Slide {
@@ -50,8 +50,9 @@ export class Slide {
     @Prop({ default: false })
     isCompleted: boolean;
 
-    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Course' })
-    course: Course;
+    // Slide now belongs to Lesson instead of Course
+    @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Lesson', required: true })
+    lesson: mongoose.Types.ObjectId;
 }
 export type SlideDocument = Document & Slide;
 export const SlideSchema = SchemaFactory.createForClass(Slide);

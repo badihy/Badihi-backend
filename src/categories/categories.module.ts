@@ -9,5 +9,6 @@ import { BunnyService } from 'src/common/services/bunny.service';
   imports: [MongooseModule.forFeature([{ name: 'Category', schema: CategorySchema }])],
   controllers: [CategoriesController],
   providers: [CategoriesService, BunnyService],
+  exports: [MongooseModule], // Export MongooseModule so Category model can be used in other modules/scripts
 })
 export class CategoriesModule { }
