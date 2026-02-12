@@ -6,6 +6,7 @@ import { CourseSchema } from './schemas/course.schema';
 import { ChapterSchema } from './schemas/chapter.schema';
 import { LessonSchema } from './schemas/lesson.schema';
 import { QuizSchema } from './schemas/quiz.schema';
+import { SlideSchema } from '../slides/schemas/slide.schema';
 import { BunnyService } from '../common/services/bunny.service';
 
 @Module({
@@ -15,6 +16,7 @@ import { BunnyService } from '../common/services/bunny.service';
       { name: 'Chapter', schema: ChapterSchema },
       { name: 'Lesson', schema: LessonSchema },
       { name: 'Quiz', schema: QuizSchema },
+      { name: 'Slide', schema: SlideSchema },
     ])
   ],
   controllers: [CoursesController],

@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
-import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CourseQueryDto, PopulateLevel } from './dto/course-query.dto';
+import { ApiConsumes, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Courses')
@@ -22,15 +23,56 @@ export class CoursesController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all courses' })
-  async findAll() {
-    return await this.coursesService.findAll();
+  @ApiOperation({ summary: 'Get all courses with flexible population' })
+  @ApiQuery({ name: 'populate', enum: PopulateLevel, required: false, description: 'Level of nested population' })
+  @ApiQuery({ name: 'includeCategory', type: Boolean, required: false, description: 'Include category information' })
+  async findAll(@Query() query: CourseQueryDto) {
+    const populateLevel = query.populate || PopulateLevel.CHAPTERS;
+    const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
+    return await this.coursesService.findAll(populateLevel, includeCategory);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get a course by id' })
-  async findOne(@Param('id') id: string) {
-    return await this.coursesService.findOne(id);
+  @ApiOperation({ summary: 'Get a course by id with flexible population' })
+  @ApiQuery({ name: 'populate', enum: PopulateLevel, required: false, description: 'Level of nested population' })
+  @ApiQuery({ name: 'includeCategory', type: Boolean, required: false, description: 'Include category information' })
+  async findOne(
+    @Param('id') id: string,
+    @Query() query: CourseQueryDto
+  ) {
+    const populateLevel = query.populate || PopulateLevel.FULL;
+    const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
+    return await this.coursesService.findOne(id, populateLevel, includeCategory);
+  }
+
+  @Get(':id/chapters')
+  @ApiOperation({ summary: 'Get a course with chapters only' })
+  async findOneWithChapters(@Param('id') id: string) {
+    return await this.coursesService.findOneWithChapters(id);
+  }
+
+  @Get(':id/chapters/lessons')
+  @ApiOperation({ summary: 'Get a course with chapters and lessons' })
+  async findOneWithLessons(@Param('id') id: string) {
+    return await this.coursesService.findOneWithLessons(id);
+  }
+
+  @Get(':id/chapters/lessons/slides')
+  @ApiOperation({ summary: 'Get a course with chapters, lessons, and slides' })
+  async findOneWithSlides(@Param('id') id: string) {
+    return await this.coursesService.findOneWithSlides(id);
+  }
+
+  @Get(':id/chapters/quizzes')
+  @ApiOperation({ summary: 'Get a course with chapters and quizzes' })
+  async findOneWithQuizzes(@Param('id') id: string) {
+    return await this.coursesService.findOneWithQuizzes(id);
+  }
+
+  @Get(':id/full')
+  @ApiOperation({ summary: 'Get a course with everything populated (chapters, lessons, slides, quizzes)' })
+  async findOneFull(@Param('id') id: string) {
+    return await this.coursesService.findOneFull(id);
   }
 
   @Patch(':id')
