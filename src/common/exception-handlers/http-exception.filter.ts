@@ -18,7 +18,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const request = ctx.getRequest();
 
         let statusCode = 500;
-        let message = 'Internal server error';
+        let message = 'خطأ في الخادم الداخلي';
 
         // Handle NestJS HttpExceptions
         if (exception instanceof HttpException) {
@@ -37,7 +37,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         ) {
             statusCode = 409;
             const field = Object.keys(exception.keyValue)[0];
-            message = `Duplicate value for "${field}": "${exception.keyValue[field]}" already exists.`;
+            message = `القيمة المكررة للحقل "${field}": "${exception.keyValue[field]}" موجودة بالفعل.`;
         }
 
         // Optional: Handle other Mongoose errors here

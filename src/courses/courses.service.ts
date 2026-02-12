@@ -31,7 +31,7 @@ export class CoursesService {
       try {
         coverImageUrl = await this.bunnyService.uploadFile(coverImage[0]);
       } catch (error) {
-        throw new Error(`Failed to upload cover image: ${error.message}`);
+        throw new Error(`فشل تحميل صورة الغلاف: ${error.message}`);
       }
     }
 
@@ -47,10 +47,10 @@ export class CoursesService {
             await this.bunnyService.deleteFile(coverImageUrl);
           } catch (deleteError) {
             // Log but don't throw - we want to throw the original error
-            console.error('Failed to delete cover image after thumbnail upload failure:', deleteError);
+            console.error('فشل حذف صورة الغلاف بعد فشل تحميل الصورة المصغرة:', deleteError);
           }
         }
-        throw new Error(`Failed to upload thumbnail image: ${error.message}`);
+        throw new Error(`فشل تحميل الصورة المصغرة: ${error.message}`);
       }
     }
 
@@ -230,7 +230,7 @@ export class CoursesService {
 
     const course = await query.exec();
     if (!course) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     return this.mapCourseResponse(course, populateLevel);
@@ -432,7 +432,7 @@ export class CoursesService {
     // Get existing course to check for old images
     const existingCourse = await this.courseModel.findById(id).exec();
     if (!existingCourse) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     const updateData: any = { ...updateCourseDto };
@@ -452,11 +452,11 @@ export class CoursesService {
             await this.bunnyService.deleteFile(existingCourse.coverImage);
           } catch (deleteError) {
             // Log but don't throw - we've already uploaded the new image
-            console.error('Failed to delete old cover image:', deleteError);
+            console.error('فشل حذف صورة الغلاف القديمة:', deleteError);
           }
         }
       } catch (error) {
-        throw new Error(`Failed to upload cover image: ${error.message}`);
+        throw new Error(`فشل تحميل صورة الغلاف: ${error.message}`);
       }
     }
 
@@ -475,7 +475,7 @@ export class CoursesService {
             await this.bunnyService.deleteFile(existingCourse.thumbnailImage);
           } catch (deleteError) {
             // Log but don't throw - we've already uploaded the new image
-            console.error('Failed to delete old thumbnail image:', deleteError);
+            console.error('فشل حذف الصورة المصغرة القديمة:', deleteError);
           }
         }
       } catch (error) {
@@ -484,16 +484,16 @@ export class CoursesService {
           try {
             await this.bunnyService.deleteFile(updateData.coverImage);
           } catch (cleanupError) {
-            console.error('Failed to cleanup cover image after thumbnail upload failure:', cleanupError);
+            console.error('فشل تنظيف صورة الغلاف بعد فشل تحميل الصورة المصغرة:', cleanupError);
           }
         }
-        throw new Error(`Failed to upload thumbnail image: ${error.message}`);
+        throw new Error(`فشل تحميل الصورة المصغرة: ${error.message}`);
       }
     }
 
     const updatedCourse = await this.courseModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
     if (!updatedCourse) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
     return updatedCourse;
   }
@@ -501,7 +501,7 @@ export class CoursesService {
   async remove(id: string): Promise<Course> {
     const courseToDelete = await this.courseModel.findById(id).exec();
     if (!courseToDelete) {
-      throw new NotFoundException(`Course with ID ${id} not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     // Delete images from BunnyCDN if they exist
@@ -509,8 +509,8 @@ export class CoursesService {
     
     if (courseToDelete.coverImage && courseToDelete.coverImage.startsWith('https://')) {
       deletePromises.push(
-        this.bunnyService.deleteFile(courseToDelete.coverImage).catch(error => {
-          console.error(`Failed to delete cover image: ${courseToDelete.coverImage}`, error);
+          this.bunnyService.deleteFile(courseToDelete.coverImage).catch(error => {
+          console.error(`فشل حذف صورة الغلاف: ${courseToDelete.coverImage}`, error);
         })
       );
     }
@@ -518,7 +518,7 @@ export class CoursesService {
     if (courseToDelete.thumbnailImage && courseToDelete.thumbnailImage.startsWith('https://')) {
       deletePromises.push(
         this.bunnyService.deleteFile(courseToDelete.thumbnailImage).catch(error => {
-          console.error(`Failed to delete thumbnail image: ${courseToDelete.thumbnailImage}`, error);
+          console.error(`فشل حذف الصورة المصغرة: ${courseToDelete.thumbnailImage}`, error);
         })
       );
     }

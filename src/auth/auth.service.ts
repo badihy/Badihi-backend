@@ -25,16 +25,16 @@ export class AuthService {
     async login(loginDto: LoginDto): Promise<{ token: string, refreshToken: string, user: Omit<User, 'password'> & { _id: any } }> {
         const user = await this.userService.findOneByEmail(loginDto.email);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new NotFoundException('المستخدم غير موجود');
         }
         
         if (!user.password) {
-            throw new UnauthorizedException('Invalid Credentials');
+            throw new UnauthorizedException('بيانات الدخول غير صحيحة');
         }
         
         const isMatch = await bcrypt.compare(loginDto.password, user.password);
         if (!isMatch) {
-            throw new UnauthorizedException('Invalid Credentials');
+            throw new UnauthorizedException('بيانات الدخول غير صحيحة');
         }
 
         const tokens = await this.getTokens(user._id, user.email);
@@ -58,12 +58,12 @@ export class AuthService {
     async refreshTokens(userId: string, refreshToken: string) {
         const user = await this.userService.findById(userId);
         if (!user || !user.refreshToken) {
-            throw new ForbiddenException('Access Denied');
+            throw new ForbiddenException('الوصول مرفوض');
         }
 
         const refreshTokenMatches = await bcrypt.compare(refreshToken, user.refreshToken);
         if (!refreshTokenMatches) {
-            throw new ForbiddenException('Access Denied');
+            throw new ForbiddenException('الوصول مرفوض');
         }
 
         const tokens = await this.getTokens(user._id, user.email);
@@ -109,7 +109,7 @@ export class AuthService {
         try {
             decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.token);
         } catch (error) {
-            throw new UnauthorizedException('Invalid Firebase Token');
+            throw new UnauthorizedException('رمز Firebase غير صحيح');
         }
 
         let user = await this.userService.findByFirebaseUid(decodedToken.uid);
@@ -136,7 +136,7 @@ export class AuthService {
     async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
         const user = await this.userService.findOneByEmail(forgotPasswordDto.email);
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new NotFoundException('المستخدم غير موجود');
         }
 
         const token = crypto.randomBytes(20).toString('hex');
@@ -146,28 +146,28 @@ export class AuthService {
         await this.emailService.sendResetPasswordEmail(user.email, user.fullName || 'User', token);
         console.log(`Reset Password Token for ${user.email}: ${token}`);
 
-        return { message: 'Password reset email sent' };
+        return { message: 'تم إرسال بريد إعادة تعيين كلمة المرور' };
     }
 
     async resetPassword(resetPasswordDto: ResetPasswordDto) {
         if (resetPasswordDto.newPassword !== resetPasswordDto.confirmNewPassword) {
-            throw new BadRequestException('Passwords do not match');
+            throw new BadRequestException('كلمات المرور غير متطابقة');
         }
 
         const user = await this.userService.findByResetToken(resetPasswordDto.token);
         if (!user) {
-            throw new BadRequestException('Invalid or expired token');
+            throw new BadRequestException('الرمز غير صحيح أو منتهي الصلاحية');
         }
 
         await this.userService.updatePassword(user._id.toString(), resetPasswordDto.newPassword);
 
-        return { message: 'Password has been reset' };
+        return { message: 'تم إعادة تعيين كلمة المرور بنجاح' };
     }
     async verifyEmail(token: string) {
         const user = await this.userService.verifyEmail(token);
         if (!user) {
-            throw new BadRequestException('Invalid or expired verification token');
+            throw new BadRequestException('رمز التحقق غير صحيح أو منتهي الصلاحية');
         }
-        return { message: 'Email verified successfully' };
+        return { message: 'تم التحقق من البريد الإلكتروني بنجاح' };
     }
 }
