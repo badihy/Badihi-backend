@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import { Document } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 @Schema({ timestamps: true })
 export class User {
@@ -40,6 +40,10 @@ export class User {
         default: false,
     })
     isVerified: boolean;
+
+    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }], default: [] })
+    enrolledCourses?: mongoose.Types.ObjectId[];
+
     @Prop({
         required: false,
     })

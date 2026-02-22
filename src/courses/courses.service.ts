@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -15,10 +15,12 @@ import { BunnyService } from '../common/services/bunny.service';
 export class CoursesService {
   constructor(
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
-    @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
-    @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>,
-    @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
+
+
+
     @InjectModel(Slide.name) private slideModel: Model<SlideDocument>,
+
+
     private readonly bunnyService: BunnyService
   ) { }
 
@@ -317,6 +319,7 @@ export class CoursesService {
     const mapped: any = {
       _id: chapter._id,
       title: chapter.title,
+      subtitle: chapter.subtitle,
       description: chapter.description,
       orderIndex: chapter.orderIndex,
       isCompleted: chapter.isCompleted,
@@ -530,4 +533,5 @@ export class CoursesService {
     const deletedCourse = await this.courseModel.findByIdAndDelete(id).exec();
     return deletedCourse!;
   }
+
 }

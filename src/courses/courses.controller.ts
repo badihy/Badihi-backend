@@ -11,6 +11,8 @@ import { FileFieldsInterceptor } from '@nestjs/platform-express';
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) { }
 
+  // ─── Course Endpoints ────────────────────────────────────────────────────────
+
   @Post()
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'coverImage', maxCount: 1 },
@@ -18,7 +20,10 @@ export class CoursesController {
   ]))
   @ApiOperation({ summary: 'Create a new course' })
   @ApiConsumes('multipart/form-data')
-  create(@Body() createCourseDto: CreateCourseDto, @UploadedFiles() files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] }) {
+  create(
+    @Body() createCourseDto: CreateCourseDto,
+    @UploadedFiles() files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] },
+  ) {
     return this.coursesService.create(createCourseDto, files);
   }
 
@@ -35,7 +40,7 @@ export class CoursesController {
   @ApiQuery({ name: 'includeCategory', type: Boolean, required: false, description: 'Include category information' })
   async findOne(
     @Param('id') id: string,
-    @Query() query: CourseQueryDto
+    @Query() query: CourseQueryDto,
   ) {
     const populateLevel = query.populate || PopulateLevel.FULL;
     const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
@@ -80,9 +85,9 @@ export class CoursesController {
   @ApiOperation({ summary: 'Update a course' })
   @ApiConsumes('multipart/form-data')
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
-    @UploadedFiles() files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] }
+    @UploadedFiles() files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] },
   ) {
     return this.coursesService.update(id, updateCourseDto, files);
   }
@@ -92,4 +97,5 @@ export class CoursesController {
   remove(@Param('id') id: string) {
     return this.coursesService.remove(id);
   }
+
 }

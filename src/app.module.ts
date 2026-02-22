@@ -10,6 +10,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { google } from 'googleapis';
 import { CoursesModule } from './courses/courses.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SlidesModule } from './slides/slides.module';
@@ -23,29 +24,48 @@ import { SlidesModule } from './slides/slides.module';
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/', // This serves files at root, e.g. /.well-known/assetlinks.json
     }),
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => {
-        const host = configService.get<string>('SMTP_HOST') || configService.get<string>('EMAIL_HOST') || 'smtp.zoho.com';
-        const port = parseInt(configService.get<string>('SMTP_PORT') || configService.get<string>('EMAIL_PORT') || '587', 10);
-        const user = configService.get<string>('SMTP_USER') || configService.get<string>('EMAIL_USER') || 'no-reply-elms450@zohomail.com';
-        const pass = configService.get<string>('SMTP_PASS') || configService.get<string>('EMAIL_PASSWORD') || '';
-        const secure = configService.get<string>('SMTP_SECURE') === 'true' || port === 465;
+   MailerModule.forRootAsync({
+  imports: [ConfigModule],
+  inject: [ConfigService],
+  useFactory: async (configService: ConfigService) => {
+    const user = configService.get<string>('EMAIL_FROM') || configService.get<string>('SMTP_USER');
+    if (!user) throw new Error('Missing EMAIL_FROM (gmail address)');
 
-        return {
-          transport: {
-            host,
-            port,
-            secure,
-            auth: { user, pass },
-          },
-          defaults: {
-            from: `"Badihi" <${user}>`,
-          },
-        };
+    const clientId = configService.get<string>('GOOGLE_CLIENT_ID');
+    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+    const redirectUri =
+      configService.get<string>('GOOGLE_REDIRECT_URI') || 'https://developers.google.com/oauthplayground';
+    const refreshToken = configService.get<string>('GOOGLE_REFRESH_TOKEN');
+
+    if (!clientId || !clientSecret || !refreshToken) {
+      throw new Error('Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN');
+    }
+
+    const oAuth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+    oAuth2Client.setCredentials({ refresh_token: refreshToken });
+
+    const accessTokenResponse = await oAuth2Client.getAccessToken();
+    const accessToken = accessTokenResponse?.token;
+    if (!accessToken) throw new Error('Failed to get Google access token');
+
+    return {
+      transport: {
+        service: 'gmail',
+        auth: {
+          type: 'OAuth2',
+          user,
+          clientId,
+          clientSecret,
+          refreshToken,
+          accessToken,
+        },
       },
-    }),
+      defaults: {
+        from: `"Badihi" <${user}>`,
+      },
+    };
+  },
+}),
     DatabaseModule,
     UserModule,
     AuthModule,

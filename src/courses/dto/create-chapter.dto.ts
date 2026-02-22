@@ -10,6 +10,11 @@ export class CreateChapterDto {
     @ApiPropertyOptional({ example: 'Learn the basics of programming' })
     @IsString()
     @IsOptional()
+    subtitle?: string;
+
+    @ApiPropertyOptional({ example: 'Learn the basics of programming' })
+    @IsString()
+    @IsOptional()
     description?: string;
 
     @ApiProperty({ example: 1 })

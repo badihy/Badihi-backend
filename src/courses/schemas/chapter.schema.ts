@@ -8,6 +8,9 @@ export class Chapter {
     title: string;
 
     @Prop({ required: false })
+    subtitle?: string;
+
+    @Prop({ required: false })
     description?: string;
 
     @Prop({

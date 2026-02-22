@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, forwardRef, Inject } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
@@ -9,23 +9,25 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../common/services/email.service';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     private readonly emailService: EmailService,
-
+    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
   ) { }
 
   /**
-   * Creates a new user account
+   * Creates a new user account and automatically logs them in.
    * - Generates a unique username from email
    * - Hashes the password
    * - Creates user with isVerified: false by default
    * - Generates verification token and sends welcome email with verification link
+   * - Issues access + refresh tokens so the client is logged in immediately
    * @param createUserDto User creation data
-   * @returns Created user document
+   * @returns { token, refreshToken, user } — same shape as the login response
    */
   async create(createUserDto: CreateUserDto) {
     const username = createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
@@ -37,10 +39,26 @@ export class UserService {
     });
 
     // Generate verification token and send welcome email with deep link
-    const token = await this.generateVerificationToken(user._id.toString());
-    await this.emailService.sendWelcomeEmail(user.email, user.fullName, token);
+    const verificationToken = await this.generateVerificationToken(user._id.toString());
+    await this.emailService.sendWelcomeEmail(user.email, user.fullName, verificationToken);
 
-    return user;
+    // Auto-login: issue access & refresh tokens right after registration
+    const tokens = await this.authService.getTokens(user._id, user.email);
+    await this.authService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+
+    return {
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        isVerified: user.isVerified,
+        fullName: user.fullName,
+        firebaseUid: user.firebaseUid,
+      },
+    };
   }
 
   async findAll() {
@@ -59,25 +77,19 @@ export class UserService {
     return await this.userModel.findOne({ firebaseUid: uid });
   }
 
-  async createFromFirebase(payload: any) {
-    const { email, name, uid, picture } = payload;
-    // Try to find by email first to link accounts if possible, otherwise create new
-    let user = await this.findOneByEmail(email);
-    if (user) {
-      user.firebaseUid = uid;
-      if (!user.fullName && name) user.fullName = name;
-      // if (!user.picture && picture) user.picture = picture; // If we had picture
-      return await user.save();
-    }
+  async createFromFirebase(payload: { uid: string }) {
+    const { uid } = payload;
 
-    const username = email.split('@')[0] + Math.floor(Math.random() * 10000); // Generate simple username
+    // Try linking to an existing account that already has this UID
+    const existing = await this.findByFirebaseUid(uid);
+    if (existing) return existing;
+
+    // Generate a placeholder username; the user can update their profile later
+    const username = 'user_' + Math.floor(Math.random() * 1000000);
     return await this.userModel.create({
-      email,
       username,
-      fullName: name || 'No Name',
       firebaseUid: uid,
-      isVerified: true, // Firebase emails are usually verified or handled by Firebase
-      // password is optional now
+      isVerified: true, // Firebase auth is already verified on the client side
     });
   }
 
@@ -152,5 +164,18 @@ export class UserService {
 
   remove(id: number) {
     return `This action removes a #${id} user`;
+  }
+
+  /**
+   * Adds a course to the user's enrolledCourses array
+   * @param userId User ID
+   * @param courseId Course ID to push
+   */
+  async enrollInCourse(userId: string, courseId: string) {
+    return await this.userModel.findByIdAndUpdate(
+      userId,
+      { $addToSet: { enrolledCourses: courseId } },
+      { new: true }
+    );
   }
 }

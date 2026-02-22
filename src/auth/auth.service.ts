@@ -1,11 +1,11 @@
-import { BadRequestException, Injectable, NotFoundException, UnauthorizedException, Inject, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from '../user/dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { User, UserDocument } from '../user/schemas/user.schema';
-import * as admin from 'firebase-admin';
+
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -19,7 +19,6 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly emailService: EmailService,
-        @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin
     ) { }
 
     async login(loginDto: LoginDto): Promise<{ token: string, refreshToken: string, user: Omit<User, 'password'> & { _id: any } }> {
@@ -105,23 +104,20 @@ export class AuthService {
     }
 
     async loginWithFirebase(firebaseLoginDto: FirebaseLoginDto) {
-        let decodedToken;
-        try {
-            decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.token);
-        } catch (error) {
-            throw new UnauthorizedException('رمز Firebase غير صحيح');
-        }
-
-        let user = await this.userService.findByFirebaseUid(decodedToken.uid);
+        // Look up the user by the Firebase UID sent from the client
+        let user = await this.userService.findByFirebaseUid(firebaseLoginDto.uid);
         if (!user) {
-            user = await this.userService.createFromFirebase(decodedToken);
+            // First-time Firebase sign-in: create a local account linked to this UID
+            user = await this.userService.createFromFirebase({ uid: firebaseLoginDto.uid });
         }
 
-        const payload = { id: user._id };
-        const token = this.jwtService.sign(payload, { expiresIn: '7d' });
+        // Issue the same access + refresh token pair as a normal login
+        const tokens = await this.getTokens(user._id, user.email);
+        await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
         return {
-            token,
+            token: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
             user: {
                 _id: user._id,
                 username: user.username,
@@ -130,7 +126,7 @@ export class AuthService {
                 isVerified: user.isVerified,
                 fullName: user.fullName,
                 firebaseUid: user.firebaseUid,
-            }
+            },
         };
     }
     async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
