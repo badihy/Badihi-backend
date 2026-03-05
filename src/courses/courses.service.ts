@@ -7,6 +7,7 @@ import { Course, CourseDocument } from './schemas/course.schema';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
+import { Enrollment, EnrollmentDocument } from './schemas/enrollment.schema';
 import { Slide, SlideDocument } from '../slides/schemas/slide.schema';
 import { PopulateLevel } from './dto/course-query.dto';
 import { BunnyService } from '../common/services/bunny.service';
@@ -15,13 +16,12 @@ import { BunnyService } from '../common/services/bunny.service';
 export class CoursesService {
   constructor(
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
-
-
-
+    @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
+    @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>,
+    @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
     @InjectModel(Slide.name) private slideModel: Model<SlideDocument>,
-
-
-    private readonly bunnyService: BunnyService
+    @InjectModel(Enrollment.name) private enrollmentModel: Model<EnrollmentDocument>,
+    private readonly bunnyService: BunnyService,
   ) { }
 
   async create(createCourseDto: CreateCourseDto, files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] }): Promise<Course> {
@@ -152,7 +152,12 @@ export class CoursesService {
     }
 
     const courses = await query.exec();
-    return this.mapCoursesResponse(courses, populateLevel);
+
+    // Pre-compute enrollments count and average rating for all returned courses
+    const courseIds = courses.map((c) => c._id).filter(Boolean);
+    const statsMap = await this.getCourseStatsMap(courseIds);
+
+    return this.mapCoursesResponse(courses, populateLevel, statsMap);
   }
 
   /**
@@ -235,7 +240,48 @@ export class CoursesService {
       throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
-    return this.mapCourseResponse(course, populateLevel);
+    // Get stats for this single course
+    const statsMap = await this.getCourseStatsMap([course._id]);
+    const stats = statsMap[course._id.toString()] ?? undefined;
+
+    return this.mapCourseResponse(course, populateLevel, stats);
+  }
+
+  /**
+   * Build a map of courseId -> { enrollmentsCount, averageRating }
+   */
+  private async getCourseStatsMap(
+    courseIds: any[],
+  ): Promise<Record<string, { enrollmentsCount: number; averageRating: number | null }>> {
+    if (!courseIds || courseIds.length === 0) {
+      return {};
+    }
+
+    const aggregation = await this.enrollmentModel.aggregate([
+      {
+        $match: {
+          course: { $in: courseIds },
+        },
+      },
+      {
+        $group: {
+          _id: '$course',
+          enrollmentsCount: { $sum: 1 },
+          averageRating: { $avg: '$rating' },
+        },
+      },
+    ]);
+
+    const statsMap: Record<string, { enrollmentsCount: number; averageRating: number | null }> = {};
+    for (const item of aggregation) {
+      const key = item._id.toString();
+      statsMap[key] = {
+        enrollmentsCount: item.enrollmentsCount ?? 0,
+        averageRating: item.averageRating ?? null,
+      };
+    }
+
+    return statsMap;
   }
 
   /**
@@ -276,7 +322,11 @@ export class CoursesService {
   /**
    * Map course response to clean structure
    */
-  private mapCourseResponse(course: any, populateLevel: PopulateLevel): any {
+  private mapCourseResponse(
+    course: any,
+    populateLevel: PopulateLevel,
+    stats?: { enrollmentsCount?: number; averageRating?: number | null },
+  ): any {
     const mapped: any = {
       _id: course._id,
       name: course.name,
@@ -293,6 +343,11 @@ export class CoursesService {
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
     };
+
+    // Attach aggregate stats if available
+    mapped.enrollmentsCount = stats?.enrollmentsCount ?? 0;
+    mapped.averageRating =
+      typeof stats?.averageRating === 'number' ? Number(stats!.averageRating.toFixed(2)) : 0;
 
     // Include category if populated
     if (course.category) {
@@ -423,8 +478,22 @@ export class CoursesService {
   /**
    * Map multiple courses response
    */
-  private mapCoursesResponse(courses: any[], populateLevel: PopulateLevel): any[] {
-    return courses.map(course => this.mapCourseResponse(course, populateLevel));
+  private mapCoursesResponse(
+    courses: any[],
+    populateLevel: PopulateLevel,
+    statsMap?: Record<
+      string,
+      {
+        enrollmentsCount?: number;
+        averageRating?: number | null;
+      }
+    >,
+  ): any[] {
+    return courses.map((course) => {
+      const key = course._id?.toString?.() ?? '';
+      const stats = statsMap ? statsMap[key] : undefined;
+      return this.mapCourseResponse(course, populateLevel, stats);
+    });
   }
 
   async update(

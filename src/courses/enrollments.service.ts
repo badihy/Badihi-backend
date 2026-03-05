@@ -67,6 +67,66 @@ export class EnrollmentsService {
   }
 
   /**
+   * Add or update a review (rating & comment) for a course enrollment
+   */
+  async addOrUpdateReview(
+    courseId: string,
+    userId: string,
+    rating: number,
+    comment?: string,
+  ): Promise<Enrollment> {
+    const enrollment = await this.enrollmentModel.findOne({ course: courseId, user: userId }).exec();
+    if (!enrollment) {
+      throw new NotFoundException('المستخدم غير مسجل في هذه الدورة');
+    }
+
+    if (rating < 1 || rating > 5) {
+      throw new BadRequestException('التقييم يجب أن يكون رقماً بين 1 و 5');
+    }
+
+    enrollment.rating = rating;
+    if (typeof comment === 'string') {
+      enrollment.comment = comment;
+    }
+    enrollment.lastAccessedAt = new Date();
+
+    return enrollment.save();
+  }
+
+  /**
+   * Get all reviews for a course (with basic user info)
+   */
+  async getCourseReviews(courseId: string): Promise<any[]> {
+    const reviews = await this.enrollmentModel
+      .find({
+        course: courseId,
+        $or: [
+          { rating: { $exists: true } },
+          { comment: { $exists: true, $ne: '' } },
+        ],
+      })
+      .populate('user', 'fullName username email')
+      .sort({ createdAt: -1 })
+      .exec();
+
+    return reviews.map((r: any) => ({
+      _id: r._id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: r.user
+        ? {
+            _id: r.user._id,
+            fullName: r.user.fullName,
+            username: r.user.username,
+            email: r.user.email,
+          }
+        : null,
+    }));
+  }
+
+  /**
    * Mark a lesson as completed to update progress
    */
   async markLessonCompleted(courseId: string, userId: string, lessonId: string): Promise<Enrollment> {

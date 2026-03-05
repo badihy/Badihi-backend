@@ -25,6 +25,14 @@ export class Enrollment {
     @Prop({ type: Boolean, default: false })
     isCompleted: boolean;
 
+    // Optional rating given by the user for this course (1-5)
+    @Prop({ type: Number, min: 1, max: 5, required: false })
+    rating?: number;
+
+    // Optional textual review/comment for this course
+    @Prop({ type: String, required: false })
+    comment?: string;
+
     @Prop({ type: Date, default: Date.now })
     enrolledAt: Date;
 

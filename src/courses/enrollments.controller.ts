@@ -38,4 +38,21 @@ export class EnrollmentsController {
   ) {
     return this.enrollmentsService.markQuizCompleted(courseId, userId, quizId);
   }
+
+  @Post(':id/reviews')
+  @ApiOperation({ summary: 'إضافة أو تحديث تقييم وتعليق لدورة تدريبية' })
+  addOrUpdateReview(
+    @Param('id') courseId: string,
+    @Body('userId') userId: string,
+    @Body('rating') rating: number,
+    @Body('comment') comment?: string,
+  ) {
+    return this.enrollmentsService.addOrUpdateReview(courseId, userId, Number(rating), comment);
+  }
+
+  @Get(':id/reviews')
+  @ApiOperation({ summary: 'جلب جميع التقييمات والتعليقات لدورة تدريبية' })
+  getCourseReviews(@Param('id') courseId: string) {
+    return this.enrollmentsService.getCourseReviews(courseId);
+  }
 }
