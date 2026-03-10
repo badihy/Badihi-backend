@@ -37,6 +37,11 @@ export class User {
     phone: string;
 
     @Prop({
+        required: false,
+    })
+    profileImage?: string;
+
+    @Prop({
         default: false,
     })
     isVerified: boolean;

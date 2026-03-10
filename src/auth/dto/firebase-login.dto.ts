@@ -1,12 +1,21 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 export class FirebaseLoginDto {
     @ApiProperty({
-        example: 'abc123XYZfirebaseUID',
-        description: 'Firebase User UID obtained from the Firebase client SDK after sign-in',
+        example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6I...',
+        description: 'Firebase ID token obtained from client SDK after Google sign-in',
     })
     @IsString()
     @IsNotEmpty()
-    uid: string;
+    idToken: string;
+
+    @ApiProperty({
+        example: 'abc123XYZfirebaseUID',
+        description: 'Optional legacy field. Not required if idToken is provided.',
+        required: false,
+    })
+    @IsOptional()
+    @IsString()
+    uid?: string;
 }

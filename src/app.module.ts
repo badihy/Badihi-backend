@@ -14,6 +14,8 @@ import { google } from 'googleapis';
 import { CoursesModule } from './courses/courses.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SlidesModule } from './slides/slides.module';
+import { ReportsModule } from './reports/reports.module';
+import { CertificateModule } from './certificate/certificate.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -72,7 +74,9 @@ import { SlidesModule } from './slides/slides.module';
     FirebaseModule,
     CoursesModule,
     CategoriesModule,
-    SlidesModule
+    SlidesModule,
+    ReportsModule,
+    CertificateModule
 
   ],
   controllers: [AppController],

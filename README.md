@@ -57,6 +57,58 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Google Login API
+
+Google login is handled through Firebase ID tokens.
+
+### Endpoint
+
+- `POST /api/auth/google-login` (alias of `POST /api/auth/firebase-login`)
+
+### Request body
+
+```json
+{
+  "idToken": "FIREBASE_ID_TOKEN_FROM_CLIENT"
+}
+```
+
+### Success response
+
+```json
+{
+  "token": "ACCESS_TOKEN",
+  "refreshToken": "REFRESH_TOKEN",
+  "user": {
+    "_id": "USER_ID",
+    "username": "username123",
+    "email": "user@gmail.com",
+    "profileImage": "https://...",
+    "firebaseUid": "firebase_uid"
+  }
+}
+```
+
+### Frontend flow (Flutter/Web/React Native)
+
+1. Sign in with Google using Firebase SDK on the client.
+2. Read Firebase ID token from the signed-in user.
+3. Send the token to backend:
+
+```bash
+curl -X POST http://localhost:3000/api/auth/google-login \
+  -H "Content-Type: application/json" \
+  -d "{\"idToken\":\"YOUR_FIREBASE_ID_TOKEN\"}"
+```
+
+### Required backend env vars
+
+These are required for Firebase Admin verification:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` (newline characters escaped as `\n` in `.env`)
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

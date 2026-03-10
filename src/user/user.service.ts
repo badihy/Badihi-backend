@@ -1,4 +1,4 @@
-import { Injectable, forwardRef, Inject } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
@@ -10,13 +10,23 @@ import { InjectModel } from '@nestjs/mongoose';
 import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../common/services/email.service';
 import { AuthService } from '../auth/auth.service';
+import { UpdateUsernameDto } from './dto/update-username.dto';
+import { UpdateProfileImageDto } from './dto/update-profile-image.dto';
+import { BunnyService } from 'src/common/services/bunny.service';
+import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.schema';
+import { Report, ReportDocument } from '../reports/schemas/report.schema';
+import { Certificate, CertificateDocument } from '../certificate/schemas/certificate.schema';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
+    @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
     private readonly emailService: EmailService,
     @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
+    private readonly bunnyService: BunnyService,
   ) { }
 
   /**
@@ -29,11 +39,13 @@ export class UserService {
    * @param createUserDto User creation data
    * @returns { token, refreshToken, user } — same shape as the login response
    */
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, file: Express.Multer.File) {
     const username = createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
     const password = await bcrypt.hash(createUserDto.password, 10);
+    const profileImage = await this.bunnyService.uploadFile(file);
     const user = await this.userModel.create({
       ...createUserDto,
+      profileImage: profileImage,
       username,
       password,
     });
@@ -54,6 +66,7 @@ export class UserService {
         username: user.username,
         email: user.email,
         phone: user.phone,
+        profileImage: user.profileImage,
         isVerified: user.isVerified,
         fullName: user.fullName,
         firebaseUid: user.firebaseUid,
@@ -77,24 +90,73 @@ export class UserService {
     return await this.userModel.findOne({ firebaseUid: uid });
   }
 
-  async createFromFirebase(payload: { uid: string }) {
-    const { uid } = payload;
+  async createFromFirebase(payload: { uid: string; email?: string; fullName?: string; profileImage?: string }) {
+    const { uid, email, fullName, profileImage } = payload;
 
     // Try linking to an existing account that already has this UID
     const existing = await this.findByFirebaseUid(uid);
     if (existing) return existing;
 
-    // Generate a placeholder username; the user can update their profile later
-    const username = 'user_' + Math.floor(Math.random() * 1000000);
+    const fallbackEmail = `${uid}@firebase.local`;
+    const safeEmail = email || fallbackEmail;
+    const safeFullName = fullName || 'Google User';
+    const username = await this.generateUniqueUsername(safeEmail, safeFullName);
+
     return await this.userModel.create({
       username,
+      email: safeEmail,
+      fullName: safeFullName,
+      profileImage,
       firebaseUid: uid,
       isVerified: true, // Firebase auth is already verified on the client side
     });
   }
 
+  async linkFirebaseUid(userId: string, uid: string) {
+    return await this.userModel.findByIdAndUpdate(userId, { firebaseUid: uid }, { new: true });
+  }
+
   async update(id: string, updateUserDto: UpdateUserDto) {
-    return await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
+    if (updateUserDto.username) {
+      await this.ensureUsernameAvailable(updateUserDto.username, id);
+    }
+
+    const updatedUser = await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
+    if (!updatedUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    return updatedUser;
+  }
+
+  async updateUsername(id: string, updateUsernameDto: UpdateUsernameDto) {
+    await this.ensureUsernameAvailable(updateUsernameDto.username, id);
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      { username: updateUsernameDto.username },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    return updatedUser;
+  }
+
+  async updateProfileImage(id: string, updateProfileImageDto: UpdateProfileImageDto, file: Express.Multer.File) : Promise<UserDocument> {
+    const profileImage = await this.bunnyService.uploadFile(file);
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      { profileImage: profileImage },
+      { new: true },
+    );
+
+    if (!updatedUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    return updatedUser;
   }
 
   async updateRefreshToken(userId: string, refreshToken: string) {
@@ -162,8 +224,18 @@ export class UserService {
     return await user.save();
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    // Clean up related entities owned by this user
+    await this.enrollmentModel.deleteMany({ user: id });
+    await this.reportModel.deleteMany({ userId: id });
+    await this.certificateModel.deleteMany({ user: id });
+
+    const deletedUser = await this.userModel.findByIdAndDelete(id);
+    if (!deletedUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    return { message: 'تم حذف المستخدم بنجاح' };
   }
 
   /**
@@ -177,5 +249,28 @@ export class UserService {
       { $addToSet: { enrolledCourses: courseId } },
       { new: true }
     );
+  }
+
+  private async ensureUsernameAvailable(username: string, currentUserId: string) {
+    const existingUser = await this.userModel.findOne({ username });
+    if (existingUser && existingUser._id.toString() !== currentUserId) {
+      throw new ConflictException('اسم المستخدم مستخدم بالفعل');
+    }
+  }
+
+  private async generateUniqueUsername(email?: string, fullName?: string) {
+    const base = (email?.split('@')[0] || fullName || 'user')
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '_')
+      .replace(/_+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'user';
+
+    for (let i = 0; i < 10; i++) {
+      const candidate = `${base}${Math.floor(Math.random() * 1000)}`;
+      const existingUser = await this.userModel.findOne({ username: candidate });
+      if (!existingUser) return candidate;
+    }
+
+    return `user_${Date.now()}`;
   }
 }

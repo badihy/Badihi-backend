@@ -21,6 +21,11 @@ export class AuthController {
     return this.authService.loginWithFirebase(firebaseLoginDto);
   }
 
+  @Post('google-login')
+  async loginWithGoogle(@Body() firebaseLoginDto: FirebaseLoginDto) {
+    return this.authService.loginWithFirebase(firebaseLoginDto);
+  }
+
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Get('refresh')

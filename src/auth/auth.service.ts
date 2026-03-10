@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from '../user/dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../user/user.service';
@@ -11,6 +11,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
 import { EmailService } from '../common/services/email.service';
+import * as admin from 'firebase-admin';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly emailService: EmailService,
+        @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin,
     ) { }
 
     async login(loginDto: LoginDto): Promise<{ token: string, refreshToken: string, user: Omit<User, 'password'> & { _id: any } }> {
@@ -47,6 +49,7 @@ export class AuthService {
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
+                profileImage: user.profileImage,
                 isVerified: user.isVerified,
                 fullName: user.fullName,
                 firebaseUid: user.firebaseUid,
@@ -104,11 +107,32 @@ export class AuthService {
     }
 
     async loginWithFirebase(firebaseLoginDto: FirebaseLoginDto) {
-        // Look up the user by the Firebase UID sent from the client
-        let user = await this.userService.findByFirebaseUid(firebaseLoginDto.uid);
+        let decodedToken: admin.auth.DecodedIdToken;
+        try {
+            decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.idToken);
+        } catch {
+            throw new UnauthorizedException('Firebase token is invalid');
+        }
+
+        const uid = decodedToken.uid;
+        const email = decodedToken.email;
+        const fullName = decodedToken.name;
+        const profileImage = decodedToken.picture;
+
+        // 1) Find existing Firebase-linked account by UID
+        let user = await this.userService.findByFirebaseUid(uid);
+
+        // 2) If same email already exists in local account, link it to this Firebase UID
+        if (!user && email) {
+            const existingByEmail = await this.userService.findOneByEmail(email);
+            if (existingByEmail) {
+                user = await this.userService.linkFirebaseUid(existingByEmail._id.toString(), uid);
+            }
+        }
+
+        // 3) First-time Firebase sign-in: create local account from decoded token payload
         if (!user) {
-            // First-time Firebase sign-in: create a local account linked to this UID
-            user = await this.userService.createFromFirebase({ uid: firebaseLoginDto.uid });
+            user = await this.userService.createFromFirebase({ uid, email, fullName, profileImage });
         }
 
         // Issue the same access + refresh token pair as a normal login
@@ -123,6 +147,7 @@ export class AuthService {
                 username: user.username,
                 email: user.email,
                 phone: user.phone,
+                profileImage: user.profileImage,
                 isVerified: user.isVerified,
                 fullName: user.fullName,
                 firebaseUid: user.firebaseUid,
