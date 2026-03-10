@@ -6,9 +6,10 @@ export class FirebaseLoginDto {
         example: 'eyJhbGciOiJSUzI1NiIsImtpZCI6I...',
         description: 'Firebase ID token obtained from client SDK after Google sign-in',
     })
+    @IsOptional()
     @IsString()
     @IsNotEmpty()
-    idToken: string;
+    idToken?: string;
 
     @ApiProperty({
         example: 'abc123XYZfirebaseUID',

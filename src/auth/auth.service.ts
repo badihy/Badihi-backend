@@ -107,32 +107,51 @@ export class AuthService {
     }
 
     async loginWithFirebase(firebaseLoginDto: FirebaseLoginDto) {
-        let decodedToken: admin.auth.DecodedIdToken;
-        try {
-            decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.idToken);
-        } catch {
-            throw new UnauthorizedException('Firebase token is invalid');
+        let uid: string | undefined;
+        let email: string | undefined;
+        let fullName: string | undefined;
+        let profileImage: string | undefined;
+
+        if (firebaseLoginDto.idToken) {
+            try {
+                const decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.idToken);
+                uid = decodedToken.uid;
+                email = decodedToken.email;
+                fullName = decodedToken.name;
+                profileImage = decodedToken.picture;
+            } catch {
+                throw new UnauthorizedException('Firebase token is invalid');
+            }
+        } else if (firebaseLoginDto.uid) {
+            uid = firebaseLoginDto.uid;
+            try {
+                const firebaseUser = await this.firebaseAdmin.auth().getUser(uid);
+                email = firebaseUser.email;
+                fullName = firebaseUser.displayName || undefined;
+                profileImage = firebaseUser.photoURL || undefined;
+            } catch {
+                throw new UnauthorizedException('Firebase UID is invalid');
+            }
+        } else {
+            throw new BadRequestException('idToken أو uid مطلوب');
         }
 
-        const uid = decodedToken.uid;
-        const email = decodedToken.email;
-        const fullName = decodedToken.name;
-        const profileImage = decodedToken.picture;
+        const resolvedUid = uid as string;
 
         // 1) Find existing Firebase-linked account by UID
-        let user = await this.userService.findByFirebaseUid(uid);
+        let user = await this.userService.findByFirebaseUid(resolvedUid);
 
         // 2) If same email already exists in local account, link it to this Firebase UID
         if (!user && email) {
             const existingByEmail = await this.userService.findOneByEmail(email);
             if (existingByEmail) {
-                user = await this.userService.linkFirebaseUid(existingByEmail._id.toString(), uid);
+                user = await this.userService.linkFirebaseUid(existingByEmail._id.toString(), resolvedUid);
             }
         }
 
         // 3) First-time Firebase sign-in: create local account from decoded token payload
         if (!user) {
-            user = await this.userService.createFromFirebase({ uid, email, fullName, profileImage });
+            user = await this.userService.createFromFirebase({ uid: resolvedUid, email, fullName, profileImage });
         }
 
         // Issue the same access + refresh token pair as a normal login

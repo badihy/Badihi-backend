@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
@@ -39,10 +39,10 @@ export class UserService {
    * @param createUserDto User creation data
    * @returns { token, refreshToken, user } — same shape as the login response
    */
-  async create(createUserDto: CreateUserDto, file: Express.Multer.File) {
+  async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const username = createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
     const password = await bcrypt.hash(createUserDto.password, 10);
-    const profileImage = await this.bunnyService.uploadFile(file);
+    const profileImage = file ? await this.bunnyService.uploadFile(file) : undefined;
     const user = await this.userModel.create({
       ...createUserDto,
       profileImage: profileImage,
@@ -144,7 +144,10 @@ export class UserService {
     return updatedUser;
   }
 
-  async updateProfileImage(id: string, updateProfileImageDto: UpdateProfileImageDto, file: Express.Multer.File) : Promise<UserDocument> {
+  async updateProfileImage(id: string, updateProfileImageDto: UpdateProfileImageDto, file?: Express.Multer.File) : Promise<UserDocument> {
+    if (!file) {
+      throw new BadRequestException('صورة الملف الشخصي مطلوبة');
+    }
     const profileImage = await this.bunnyService.uploadFile(file);
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id,

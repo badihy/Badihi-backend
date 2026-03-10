@@ -19,7 +19,7 @@ export class UserController {
   }]))
   @Post()
   async create(@Body() createUserDto: CreateUserDto, @UploadedFiles() files: { profileImage: Express.Multer.File[] }) {
-    return await this.userService.create(createUserDto, files.profileImage[0]);
+    return await this.userService.create(createUserDto, files?.profileImage?.[0]);
   }
 
   @Get()
@@ -49,7 +49,7 @@ export class UserController {
   }]))
   @ApiConsumes('multipart/form-data')
   updateProfileImage(@Param('id') id: string, @Body() updateProfileImageDto: UpdateProfileImageDto, @UploadedFiles() files: { profileImage: Express.Multer.File[] }) {
-    return this.userService.updateProfileImage(id, updateProfileImageDto, files.profileImage[0]);
+    return this.userService.updateProfileImage(id, updateProfileImageDto, files?.profileImage?.[0]);
   }
 
   @Delete(':id')
