@@ -6,7 +6,6 @@ export class UpdateProfileImageDto {
     example: 'https://cdn.example.com/profiles/user-123.jpg',
     format: 'binary'
   })
-  @IsString()
   @IsNotEmpty()
   profileImage: string;
 }
