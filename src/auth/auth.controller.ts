@@ -1,11 +1,14 @@
-import { Body, Controller, Post, UseGuards, Get, Request, Query } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards, Get, Request, Query, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { LoginDto } from '../user/dto/login.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import { FirebaseGuard } from './guards/firebase.guard';
+import { TokenResponseDto } from './dto/token-response.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -16,22 +19,41 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  @Post('firebase-login')
-  async loginWithFirebase(@Body() firebaseLoginDto: FirebaseLoginDto) {
-    return this.authService.loginWithFirebase(firebaseLoginDto);
+  @Get('google')
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({ summary: 'Initiate Google OAuth login' })
+  async googleAuth() {
+    // Guard redirects to Google
   }
 
-  @Post('google-login')
-  async loginWithGoogle(@Body() firebaseLoginDto: FirebaseLoginDto) {
-    return this.authService.loginWithFirebase(firebaseLoginDto);
+  @Get('google/callback')
+  @UseGuards(GoogleOAuthGuard)
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  @ApiOkResponse({
+    description: 'Successfully authenticated with Google',
+    type: TokenResponseDto,
+  })
+  async googleAuthCallback(@Req() req: any): Promise<TokenResponseDto> {
+    return this.authService.issueTokenPairForUser(req.user);
+  }
+
+  @Post('google/id-token')
+  @UseGuards(FirebaseGuard)
+  @ApiOperation({ summary: 'Login/Register with Google ID token (mobile)' })
+  @ApiOkResponse({
+    description: 'Successfully authenticated with Google ID token',
+    type: TokenResponseDto,
+  })
+  async googleIdToken(@Req() req: any): Promise<TokenResponseDto> {
+    return this.authService.issueTokensFromOAuthGuardPayload(req.user);
   }
 
   @ApiBearerAuth()
   @UseGuards(AuthGuard('jwt-refresh'))
   @Get('refresh')
   refreshTokens(@Request() req) {
-    const userId = req.user['id'];
-    const refreshToken = req.user['refreshToken'];
+    const userId = req.user?.id ?? req.user?.sub;
+    const refreshToken = req.user?.refreshToken;
     return this.authService.refreshTokens(userId, refreshToken);
   }
 

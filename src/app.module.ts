@@ -16,6 +16,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { SlidesModule } from './slides/slides.module';
 import { ReportsModule } from './reports/reports.module';
 import { CertificateModule } from './certificate/certificate.module';
+import { BookmarksModule } from './bookmarks/bookmarks.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -76,7 +77,8 @@ import { CertificateModule } from './certificate/certificate.module';
     CategoriesModule,
     SlidesModule,
     ReportsModule,
-    CertificateModule
+    CertificateModule,
+    BookmarksModule,
 
   ],
   controllers: [AppController],

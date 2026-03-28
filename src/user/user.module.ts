@@ -10,6 +10,7 @@ import { BunnyService } from 'src/common/services/bunny.service';
 import { Enrollment, EnrollmentSchema } from '../courses/schemas/enrollment.schema';
 import { Report, ReportSchema } from '../reports/schemas/report.schema';
 import { Certificate, CertificateSchema } from '../certificate/schemas/certificate.schema';
+import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { Certificate, CertificateSchema } from '../certificate/schemas/certifica
       { name: Enrollment.name, schema: EnrollmentSchema },
       { name: Report.name, schema: ReportSchema },
       { name: Certificate.name, schema: CertificateSchema },
+      { name: Bookmark.name, schema: BookmarkSchema },
     ]),
     JwtModule,
     forwardRef(() => AuthModule),

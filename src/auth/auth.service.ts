@@ -1,10 +1,11 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import type { UserDocument } from '../user/schemas/user.schema';
 import { LoginDto } from '../user/dto/login.dto';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../user/user.service';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { User, UserDocument } from '../user/schemas/user.schema';
+import { User } from '../user/schemas/user.schema';
 
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -12,6 +13,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
 import { EmailService } from '../common/services/email.service';
 import * as admin from 'firebase-admin';
+import { TokenResponseDto } from './dto/token-response.dto';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +24,81 @@ export class AuthService {
         private readonly emailService: EmailService,
         @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin,
     ) { }
+
+    /**
+     * Web Google OAuth (passport-google-oauth20) — find or create local user by email.
+     */
+    async validateOAuthUser(
+        userProfile: {
+            email: string;
+            firstName?: string;
+            lastName?: string;
+            picture?: string;
+            providerId: string;
+            accessToken?: string;
+        },
+        _provider: string,
+    ): Promise<UserDocument> {
+        return this.userService.findOrCreateGoogleUser({
+            email: userProfile.email,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+            picture: userProfile.picture,
+        });
+    }
+
+    /**
+     * Issue access + refresh tokens, persist hashed refresh token (same as email/password login).
+     */
+    async issueTokenPairForUser(user: UserDocument): Promise<TokenResponseDto> {
+        const tokens = await this.getTokens(user._id, user.email);
+        await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+        return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: {
+                id: user._id.toString(),
+                email: user.email,
+                username: user.username,
+                phone: user.phone,
+                name: user.fullName,
+                profileImage: user.profileImage,
+            },
+        };
+    }
+
+    /**
+     * After FirebaseGuard: payload is { uid, email?, name?, provider? } — sync to User then issue tokens.
+     */
+    async issueTokensFromOAuthGuardPayload(payload: {
+        uid: string;
+        email?: string;
+        name?: string;
+        provider?: string;
+    }): Promise<TokenResponseDto> {
+        let user: UserDocument | null = await this.userService.findByFirebaseUid(payload.uid);
+
+        if (!user && payload.email) {
+            const byEmail = await this.userService.findOneByEmail(payload.email);
+            if (byEmail) {
+                user = await this.userService.linkFirebaseUid(byEmail._id.toString(), payload.uid);
+            }
+        }
+
+        if (!user) {
+            user = await this.userService.createFromFirebase({
+                uid: payload.uid,
+                email: payload.email,
+                fullName: payload.name,
+            });
+        }
+
+        if (!user) {
+            throw new UnauthorizedException('تعذر إنشاء أو استرجاع المستخدم');
+        }
+
+        return this.issueTokenPairForUser(user);
+    }
 
     async login(loginDto: LoginDto): Promise<{ token: string, refreshToken: string, user: Omit<User, 'password'> & { _id: any } }> {
         const user = await this.userService.findOneByEmail(loginDto.email);
@@ -120,7 +197,7 @@ export class AuthService {
                 fullName = decodedToken.name;
                 profileImage = decodedToken.picture;
             } catch {
-                throw new UnauthorizedException('Firebase token is invalid');
+                throw new UnauthorizedException('رمز Firebase غير صالح');
             }
         } else if (firebaseLoginDto.uid) {
             uid = firebaseLoginDto.uid;
@@ -130,7 +207,7 @@ export class AuthService {
                 fullName = firebaseUser.displayName || undefined;
                 profileImage = firebaseUser.photoURL || undefined;
             } catch {
-                throw new UnauthorizedException('Firebase UID is invalid');
+                throw new UnauthorizedException('معرف Firebase غير صالح');
             }
         } else {
             throw new BadRequestException('idToken أو uid مطلوب');

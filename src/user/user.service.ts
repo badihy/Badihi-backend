@@ -16,6 +16,7 @@ import { BunnyService } from 'src/common/services/bunny.service';
 import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.schema';
 import { Report, ReportDocument } from '../reports/schemas/report.schema';
 import { Certificate, CertificateDocument } from '../certificate/schemas/certificate.schema';
+import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 
 @Injectable()
 export class UserService {
@@ -24,6 +25,7 @@ export class UserService {
     @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
     @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
     @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
+    @InjectModel(Bookmark.name) private readonly bookmarkModel: Model<BookmarkDocument>,
     private readonly emailService: EmailService,
     @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
     private readonly bunnyService: BunnyService,
@@ -227,9 +229,29 @@ export class UserService {
     return await user.save();
   }
 
+  async findOrCreateGoogleUser(payload: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    picture?: string;
+  }) {
+    let user = await this.findOneByEmail(payload.email);
+    if (user) return user;
+    const fullName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'Google User';
+    const username = await this.generateUniqueUsername(payload.email, fullName);
+    return await this.userModel.create({
+      email: payload.email,
+      fullName,
+      username,
+      profileImage: payload.picture,
+      isVerified: true,
+    });
+  }
+
   async remove(id: string) {
     // Clean up related entities owned by this user
     await this.enrollmentModel.deleteMany({ user: id });
+    await this.bookmarkModel.deleteMany({ user: id });
     await this.reportModel.deleteMany({ userId: id });
     await this.certificateModel.deleteMany({ user: id });
 
