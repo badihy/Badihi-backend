@@ -4,7 +4,7 @@ import { Category, CategoryDocument } from './schemas/category.schema';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Injectable } from '@nestjs/common';
-import { BunnyService } from 'src/common/services/bunny.service';
+import { BunnyService } from '../common/services/bunny.service';
 
 @Injectable()
 export class CategoriesService {

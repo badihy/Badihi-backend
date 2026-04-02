@@ -12,7 +12,7 @@ import { EmailService } from '../common/services/email.service';
 import { AuthService } from '../auth/auth.service';
 import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UpdateProfileImageDto } from './dto/update-profile-image.dto';
-import { BunnyService } from 'src/common/services/bunny.service';
+import { BunnyService } from '../common/services/bunny.service';
 import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.schema';
 import { Report, ReportDocument } from '../reports/schemas/report.schema';
 import { Certificate, CertificateDocument } from '../certificate/schemas/certificate.schema';

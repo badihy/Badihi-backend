@@ -1,6 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { Document } from "mongoose";
-import { Category } from "src/categories/schemas/category.schema";
+import { Category } from '../../categories/schemas/category.schema';
 import { Chapter } from "./chapter.schema";
 import { CourseLevel } from "../types/course-level.enum";
 
