@@ -6,7 +6,6 @@ import { HttpExceptionFilter } from '../src/common/exception-handlers/http-excep
 import { ResponseInterceptor } from '../src/common/interceptors/response.interceptor';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import serverlessExpress from '@codegenie/serverless-express';
 
 let cachedServer: any;
 
@@ -31,11 +30,17 @@ async function bootstrapServer() {
       forbidNonWhitelisted: false,
     }),
   );
+  app.enableCors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
   await app.init();
-  return serverlessExpress({ app: expressApp });
+  return expressApp;
 }
 
 export default async function handler(req: any, res: any) {
