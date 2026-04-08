@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, Req } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
@@ -30,8 +30,9 @@ export class CoursesController {
   @Get()
   @ApiOperation({ summary: 'Get all courses with full population' })
   @ApiQuery({ name: 'category', type: String, required: false, description: 'Filter by category ID' })
-  async findAll(@Query('category') categoryId?: string) {
-    return await this.coursesService.findAll(PopulateLevel.FULL, true, categoryId);
+  async findAll(@Query('category') categoryId?: string, @Req() req?: any) {
+    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    return await this.coursesService.findAll(PopulateLevel.FULL, true, categoryId, userId);
   }
 
   @Get(':id')
@@ -41,10 +42,12 @@ export class CoursesController {
   async findOne(
     @Param('id') id: string,
     @Query() query: CourseQueryDto,
+    @Req() req?: any,
   ) {
     const populateLevel = query.populate || PopulateLevel.FULL;
     const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
-    return await this.coursesService.findOne(id, populateLevel, includeCategory);
+    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    return await this.coursesService.findOne(id, populateLevel, includeCategory, userId);
   }
 
   @Get(':id/chapters')

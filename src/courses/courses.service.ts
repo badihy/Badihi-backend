@@ -8,6 +8,7 @@ import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
 import { Enrollment, EnrollmentDocument } from './schemas/enrollment.schema';
+import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
 import { Slide, SlideDocument } from '../slides/schemas/slide.schema';
 import { PopulateLevel } from './dto/course-query.dto';
 import { BunnyService } from '../common/services/bunny.service';
@@ -21,10 +22,14 @@ export class CoursesService {
     @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
     @InjectModel(Slide.name) private slideModel: Model<SlideDocument>,
     @InjectModel(Enrollment.name) private enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
     private readonly bunnyService: BunnyService,
   ) { }
 
-  async create(createCourseDto: CreateCourseDto, files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] }): Promise<Course> {
+  async create(
+    createCourseDto: CreateCourseDto,
+    files: { coverImage: any[]; thumbnailImage: any[] },
+  ): Promise<Course> {
     const { coverImage, thumbnailImage } = files;
 
     // Upload cover image if provided
@@ -32,8 +37,8 @@ export class CoursesService {
     if (coverImage && coverImage.length > 0 && coverImage[0]) {
       try {
         coverImageUrl = await this.bunnyService.uploadFile(coverImage[0]);
-      } catch (error) {
-        throw new Error(`فشل تحميل صورة الغلاف: ${error.message}`);
+      } catch (error: any) {
+        throw new Error(`فشل تحميل صورة الغلاف: ${error?.message || ''}`);
       }
     }
 
@@ -42,7 +47,7 @@ export class CoursesService {
     if (thumbnailImage && thumbnailImage.length > 0 && thumbnailImage[0]) {
       try {
         thumbnailImageUrl = await this.bunnyService.uploadFile(thumbnailImage[0]);
-      } catch (error) {
+      } catch (error: any) {
         // If cover was uploaded but thumbnail fails, delete the cover image
         if (coverImageUrl && coverImageUrl !== createCourseDto.coverImage) {
           try {
@@ -52,7 +57,7 @@ export class CoursesService {
             console.error('فشل حذف صورة الغلاف بعد فشل تحميل الصورة المصغرة:', deleteError);
           }
         }
-        throw new Error(`فشل تحميل الصورة المصغرة: ${error.message}`);
+        throw new Error(`فشل تحميل الصورة المصغرة: ${error?.message || ''}`);
       }
     }
 
@@ -73,7 +78,12 @@ export class CoursesService {
    * @param includeCategory - Whether to include category
    * @param categoryId - Optional category ID to filter by
    */
-  async findAll(populateLevel: PopulateLevel = PopulateLevel.CHAPTERS, includeCategory: boolean = true, categoryId?: string): Promise<any[]> {
+  async findAll(
+    populateLevel: PopulateLevel = PopulateLevel.CHAPTERS,
+    includeCategory: boolean = true,
+    categoryId?: string,
+    userId?: string,
+  ): Promise<any[]> {
     let query = this.courseModel.find();
     
     // Filter by category if provided
@@ -156,14 +166,20 @@ export class CoursesService {
     // Pre-compute enrollments count and average rating for all returned courses
     const courseIds = courses.map((c) => c._id).filter(Boolean);
     const statsMap = await this.getCourseStatsMap(courseIds);
+    const bookmarkedSet = await this.getBookmarkedCourseIdsSet(userId, courseIds);
 
-    return this.mapCoursesResponse(courses, populateLevel, statsMap);
+    return this.mapCoursesResponse(courses, populateLevel, statsMap, bookmarkedSet);
   }
 
   /**
    * Get a single course by ID with flexible population
    */
-  async findOne(id: string, populateLevel: PopulateLevel = PopulateLevel.FULL, includeCategory: boolean = true): Promise<any> {
+  async findOne(
+    id: string,
+    populateLevel: PopulateLevel = PopulateLevel.FULL,
+    includeCategory: boolean = true,
+    userId?: string,
+  ): Promise<any> {
     let query = this.courseModel.findById(id);
 
     // Populate category if requested
@@ -243,8 +259,27 @@ export class CoursesService {
     // Get stats for this single course
     const statsMap = await this.getCourseStatsMap([course._id]);
     const stats = statsMap[course._id.toString()] ?? undefined;
+    const bookmarkedSet = await this.getBookmarkedCourseIdsSet(userId, [course._id]);
+    const isBookmarked = bookmarkedSet.has(course._id.toString());
 
-    return this.mapCourseResponse(course, populateLevel, stats);
+    return this.mapCourseResponse(course, populateLevel, stats, isBookmarked);
+  }
+
+  private async getBookmarkedCourseIdsSet(userId: string | undefined, courseIds: any[]) {
+    const set = new Set<string>();
+    if (!userId || !courseIds || courseIds.length === 0) return set;
+
+    const bookmarks = await this.bookmarkModel
+      .find({ user: userId, course: { $in: courseIds } })
+      .select('course')
+      .lean()
+      .exec();
+
+    for (const b of bookmarks as any[]) {
+      if (b?.course) set.add(b.course.toString());
+    }
+
+    return set;
   }
 
   /**
@@ -326,6 +361,7 @@ export class CoursesService {
     course: any,
     populateLevel: PopulateLevel,
     stats?: { enrollmentsCount?: number; averageRating?: number | null },
+    isBookmarked?: boolean,
   ): any {
     const mapped: any = {
       _id: course._id,
@@ -348,6 +384,7 @@ export class CoursesService {
     mapped.enrollmentsCount = stats?.enrollmentsCount ?? 0;
     mapped.averageRating =
       typeof stats?.averageRating === 'number' ? Number(stats!.averageRating.toFixed(2)) : 0;
+    mapped.isBookmarked = !!isBookmarked;
 
     // Include category if populated
     if (course.category) {
@@ -488,18 +525,20 @@ export class CoursesService {
         averageRating?: number | null;
       }
     >,
+    bookmarkedSet?: Set<string>,
   ): any[] {
     return courses.map((course) => {
       const key = course._id?.toString?.() ?? '';
       const stats = statsMap ? statsMap[key] : undefined;
-      return this.mapCourseResponse(course, populateLevel, stats);
+      const isBookmarked = bookmarkedSet ? bookmarkedSet.has(key) : false;
+      return this.mapCourseResponse(course, populateLevel, stats, isBookmarked);
     });
   }
 
   async update(
     id: string, 
     updateCourseDto: UpdateCourseDto, 
-    files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] }
+    files?: { cover?: any[]; thumbnail?: any[] }
   ): Promise<Course> {
     // Get existing course to check for old images
     const existingCourse = await this.courseModel.findById(id).exec();
@@ -527,8 +566,8 @@ export class CoursesService {
             console.error('فشل حذف صورة الغلاف القديمة:', deleteError);
           }
         }
-      } catch (error) {
-        throw new Error(`فشل تحميل صورة الغلاف: ${error.message}`);
+      } catch (error: any) {
+        throw new Error(`فشل تحميل صورة الغلاف: ${error?.message || ''}`);
       }
     }
 
@@ -550,7 +589,7 @@ export class CoursesService {
             console.error('فشل حذف الصورة المصغرة القديمة:', deleteError);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         // If cover was uploaded but thumbnail fails, try to clean up
         if (updateData.coverImage && updateData.coverImage !== existingCourse.coverImage) {
           try {
@@ -559,7 +598,7 @@ export class CoursesService {
             console.error('فشل تنظيف صورة الغلاف بعد فشل تحميل الصورة المصغرة:', cleanupError);
           }
         }
-        throw new Error(`فشل تحميل الصورة المصغرة: ${error.message}`);
+        throw new Error(`فشل تحميل الصورة المصغرة: ${error?.message || ''}`);
       }
     }
 

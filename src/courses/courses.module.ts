@@ -8,6 +8,7 @@ import { LessonSchema } from './schemas/lesson.schema';
 import { QuizSchema } from './schemas/quiz.schema';
 import { SlideSchema } from '../slides/schemas/slide.schema';
 import { EnrollmentSchema } from './schemas/enrollment.schema';
+import { BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
 import { BunnyService } from '../common/services/bunny.service';
 import { UserModule } from '../user/user.module';
 import { ChaptersService } from './chapters.service';
@@ -29,6 +30,7 @@ import { QuizzesService } from './quizzes.service';
       { name: 'Quiz', schema: QuizSchema },
       { name: 'Slide', schema: SlideSchema },
       { name: 'Enrollment', schema: EnrollmentSchema },
+      { name: 'Bookmark', schema: BookmarkSchema },
     ])
   ],
   controllers: [
