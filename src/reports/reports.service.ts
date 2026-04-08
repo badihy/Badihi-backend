@@ -4,15 +4,25 @@ import { Model } from 'mongoose';
 import { CreateReportDto } from './dto/create-report.dto';
 import { Report, ReportDocument } from './schemas/report.schema';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
+import { BunnyService } from '../common/services/bunny.service';
 
 @Injectable()
 export class ReportsService {
   constructor(
     @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
+    private readonly bunnyService: BunnyService,
   ) { }
 
-  async create(createReportDto: CreateReportDto) {
-    return await this.reportModel.create(createReportDto);
+  async create(createReportDto: CreateReportDto, file?: any) {
+    let imageUrl = createReportDto.imageUrl;
+    if (file) {
+      imageUrl = await this.bunnyService.uploadFile(file);
+    }
+
+    return await this.reportModel.create({
+      ...createReportDto,
+      imageUrl,
+    });
   }
 
   async findAll() {

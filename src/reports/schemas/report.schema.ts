@@ -32,6 +32,9 @@ export class Report {
   @Prop({ required: true })
   message: string;
 
+  @Prop({ required: false })
+  imageUrl?: string;
+
   @Prop({ enum: ReportType, default: ReportType.PROBLEM })
   type: ReportType;
 

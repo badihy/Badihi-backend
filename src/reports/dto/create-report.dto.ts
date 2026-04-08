@@ -28,6 +28,15 @@ export class CreateReportDto {
   @IsNotEmpty()
   message: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    format: 'binary',
+    description: 'صورة اختيارية للبلاغ',
+  })
+  @IsOptional()
+  @IsString()
+  imageUrl?: string;
+
   @ApiPropertyOptional({ enum: ReportType, example: ReportType.PROBLEM })
   @IsOptional()
   @IsEnum(ReportType)

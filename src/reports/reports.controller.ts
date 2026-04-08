@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportsService } from './reports.service';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -11,8 +12,18 @@ export class ReportsController {
 
   @Post()
   @ApiOperation({ summary: 'Submit a new user report/problem' })
-  create(@Body() createReportDto: CreateReportDto) {
-    return this.reportsService.create(createReportDto);
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'image', maxCount: 1 },
+    // Some clients send the uploaded file under "imageUrl" (matches DTO field name)
+    { name: 'imageUrl', maxCount: 1 },
+  ]))
+  create(
+    @Body() createReportDto: CreateReportDto,
+    @UploadedFiles() files?: { image?: any[]; imageUrl?: any[] },
+  ) {
+    const file = files?.image?.[0] || files?.imageUrl?.[0];
+    return this.reportsService.create(createReportDto, file);
   }
 
   @Get()

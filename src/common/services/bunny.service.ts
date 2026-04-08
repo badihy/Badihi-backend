@@ -9,12 +9,13 @@ export class BunnyService {
     private readonly storageZone: string;
     private readonly apiKey: string;
     private readonly baseUrl: string;
-    private readonly timeout: number = 30000;
+    private readonly timeout: number;
 
     constructor(private configService: ConfigService) {
         this.storageZone = this.configService.get<string>('BUNNY_STORAGE_ZONE', 'bsohula');
         this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY', 'c7fbeb57-331c-4510-a04d979b0515-1729-4670');
         this.baseUrl = `https://storage.bunnycdn.com/${this.storageZone}`;
+        this.timeout = Number(this.configService.get<string>('BUNNY_TIMEOUT_MS') || '90000');
 
         if (!this.apiKey) {
             this.logger.warn('مفتاح BUNNY_API_KEY غير مُكوّن. ستفشل عمليات تحميل الملفات.');
@@ -79,19 +80,24 @@ export class BunnyService {
             this.logger.log(`File uploaded successfully: ${cdnUrl}`);
             return cdnUrl;
 
-        } catch (error) {
-            this.logger.error(`File upload failed for ${fileName}:`, error.message);
+        } catch (error: any) {
+            this.logger.error(`File upload failed for ${fileName}:`, error?.message);
 
-            if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+            const isTimeout =
+                error?.code === 'ETIMEDOUT' ||
+                error?.code === 'ECONNABORTED' ||
+                (typeof error?.message === 'string' && error.message.toLowerCase().includes('timeout'));
+
+            if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
                 throw new Error('فشل الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
-            } else if (error.code === 'ETIMEDOUT') {
-                throw new Error('انتهت مهلة التحميل. قد يكون الملف كبيراً جداً أو الاتصال بطيئاً.');
-            } else if (error.response?.status === 401) {
+            } else if (isTimeout) {
+                throw new Error('انتهت مهلة رفع الملف. جرّب مرة أخرى أو استخدم ملفاً أصغر.');
+            } else if (error?.response?.status === 401) {
                 throw new Error('مفتاح API الخاص بـ BunnyCDN غير صحيح. يرجى التحقق من الإعدادات.');
-            } else if (error.response?.status === 404) {
+            } else if (error?.response?.status === 404) {
                 throw new Error('منطقة التخزين غير موجودة. يرجى التحقق من إعدادات BunnyCDN.');
             } else {
-                throw new Error(`فشل تحميل الملف: ${error.message}`);
+                throw new Error(`فشل تحميل الملف: ${error?.message || ''}`);
             }
         }
     }
