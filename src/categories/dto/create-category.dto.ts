@@ -13,7 +13,6 @@ export class CreateCategoryDto {
         format: 'binary'
 
     })
-    @IsString()
     @IsOptional()
     image?: string;
 

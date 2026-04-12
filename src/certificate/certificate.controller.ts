@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CertificateService } from './certificate.service';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
 
 @ApiTags('Certificate')
+@ApiBearerAuth('JWT-access')
 @Controller('certificate')
 export class CertificateController {
   constructor(private readonly certificateService: CertificateService) { }

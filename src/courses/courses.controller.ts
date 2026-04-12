@@ -3,10 +3,11 @@ import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto, PopulateLevel } from './dto/course-query.dto';
-import { ApiConsumes, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Courses')
+@ApiBearerAuth('JWT-access')
 @Controller('courses')
 export class CoursesController {
   constructor(private readonly coursesService: CoursesService) { }

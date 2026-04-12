@@ -2,17 +2,20 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, Upl
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UpdateProfileImageDto } from './dto/update-profile-image.dto';
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 
+@ApiBearerAuth('JWT-access')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
 
-  @ApiOperation({ summary: 'Create a new user' })
+  @Public()
+  @ApiOperation({ summary: 'Create a new user', security: [] })
   @ApiConsumes('multipart/form-data') @UseInterceptors(FileFieldsInterceptor([{
     name: 'profileImage',
     maxCount: 1

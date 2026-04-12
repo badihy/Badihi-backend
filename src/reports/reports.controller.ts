@@ -1,11 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportsService } from './reports.service';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Reports')
+@ApiBearerAuth('JWT-access')
 @Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) { }

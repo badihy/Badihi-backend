@@ -12,6 +12,7 @@ import { EmailService } from '../common/services/email.service';
 import { PassportModule } from '@nestjs/passport';
 import { FirebaseGuard } from './guards/firebase.guard';
 import { GoogleOAuthGuard } from './guards/google-oauth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -37,7 +38,8 @@ import { GoogleOAuthGuard } from './guards/google-oauth.guard';
     EmailService,
     FirebaseGuard,
     GoogleOAuthGuard,
+    JwtAuthGuard,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtAuthGuard],
 })
 export class AuthModule { }

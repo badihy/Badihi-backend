@@ -1,5 +1,6 @@
 import { Body, Controller, Post, UseGuards, Get, Request, Query, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { Public } from './decorators/public.decorator';
 import { AuthService } from './auth.service';
 import { LoginDto } from '../user/dto/login.dto';
 import { FirebaseLoginDto } from './dto/firebase-login.dto';
@@ -10,6 +11,7 @@ import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { FirebaseGuard } from './guards/firebase.guard';
 import { TokenResponseDto } from './dto/token-response.dto';
 
+@Public()
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
