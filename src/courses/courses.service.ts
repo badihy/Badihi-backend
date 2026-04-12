@@ -166,9 +166,10 @@ export class CoursesService {
     // Pre-compute enrollments count and average rating for all returned courses
     const courseIds = courses.map((c) => c._id).filter(Boolean);
     const statsMap = await this.getCourseStatsMap(courseIds);
+    const reviewsMap = await this.getCourseReviewsMap(courseIds);
     const bookmarkedSet = await this.getBookmarkedCourseIdsSet(userId, courseIds);
 
-    return this.mapCoursesResponse(courses, populateLevel, statsMap, bookmarkedSet);
+    return this.mapCoursesResponse(courses, populateLevel, statsMap, bookmarkedSet, reviewsMap);
   }
 
   /**
@@ -259,10 +260,12 @@ export class CoursesService {
     // Get stats for this single course
     const statsMap = await this.getCourseStatsMap([course._id]);
     const stats = statsMap[course._id.toString()] ?? undefined;
+    const reviewsMap = await this.getCourseReviewsMap([course._id]);
+    const reviewsBundle = reviewsMap[course._id.toString()] ?? { reviews: [], reviewsCount: 0 };
     const bookmarkedSet = await this.getBookmarkedCourseIdsSet(userId, [course._id]);
     const isBookmarked = bookmarkedSet.has(course._id.toString());
 
-    return this.mapCourseResponse(course, populateLevel, stats, isBookmarked);
+    return this.mapCourseResponse(course, populateLevel, stats, isBookmarked, reviewsBundle);
   }
 
   private async getBookmarkedCourseIdsSet(userId: string | undefined, courseIds: any[]) {
@@ -320,6 +323,76 @@ export class CoursesService {
   }
 
   /**
+   * شكل مراجعة واحدة كما في واجهة التقييمات (متسق مع enrollments.getCourseReviews).
+   */
+  private mapEnrollmentReviewToDto(r: any): any {
+    return {
+      _id: r._id,
+      rating: r.rating,
+      comment: r.comment,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      user: r.user
+        ? {
+            _id: r.user._id,
+            fullName: r.user.fullName,
+            username: r.user.username,
+            email: r.user.email,
+          }
+        : null,
+    };
+  }
+
+  /** مرشح التقييمات: يوجد تقييم رقمي أو تعليق غير فارغ (نفس منطق getCourseReviews). */
+  private reviewMatchFilter() {
+    return {
+      $or: [
+        { rating: { $exists: true, $ne: null } },
+        { comment: { $exists: true, $nin: [null, ''] } },
+      ],
+    };
+  }
+
+  /**
+   * تقييمات لعدة دورات دفعة واحدة: قائمة المراجعات + reviewsCount لكل دورة.
+   */
+  private async getCourseReviewsMap(
+    courseIds: any[],
+  ): Promise<Record<string, { reviews: any[]; reviewsCount: number }>> {
+    if (!courseIds?.length) {
+      return {};
+    }
+
+    const rows = await this.enrollmentModel
+      .find({
+        course: { $in: courseIds },
+        ...this.reviewMatchFilter(),
+      })
+      .populate('user', 'fullName username email')
+      .sort({ createdAt: -1 })
+      .lean()
+      .exec();
+
+    const byCourse: Record<string, any[]> = {};
+    for (const r of rows as any[]) {
+      const cid = r.course?.toString?.() ?? String(r.course);
+      if (!byCourse[cid]) {
+        byCourse[cid] = [];
+      }
+      byCourse[cid].push(this.mapEnrollmentReviewToDto(r));
+    }
+
+    const out: Record<string, { reviews: any[]; reviewsCount: number }> = {};
+    for (const id of courseIds) {
+      const key = id?.toString?.() ?? String(id);
+      const list = byCourse[key] ?? [];
+      out[key] = { reviews: list, reviewsCount: list.length };
+    }
+
+    return out;
+  }
+
+  /**
    * Get course with chapters only
    */
   async findOneWithChapters(id: string): Promise<any> {
@@ -362,6 +435,7 @@ export class CoursesService {
     populateLevel: PopulateLevel,
     stats?: { enrollmentsCount?: number; averageRating?: number | null },
     isBookmarked?: boolean,
+    reviewsBundle?: { reviews: any[]; reviewsCount: number },
   ): any {
     const mapped: any = {
       _id: course._id,
@@ -385,6 +459,9 @@ export class CoursesService {
     mapped.averageRating =
       typeof stats?.averageRating === 'number' ? Number(stats!.averageRating.toFixed(2)) : 0;
     mapped.isBookmarked = !!isBookmarked;
+
+    mapped.reviewsCount = reviewsBundle?.reviewsCount ?? 0;
+    mapped.reviews = reviewsBundle?.reviews ?? [];
 
     // Include category if populated
     if (course.category) {
@@ -526,12 +603,14 @@ export class CoursesService {
       }
     >,
     bookmarkedSet?: Set<string>,
+    reviewsMap?: Record<string, { reviews: any[]; reviewsCount: number }>,
   ): any[] {
     return courses.map((course) => {
       const key = course._id?.toString?.() ?? '';
       const stats = statsMap ? statsMap[key] : undefined;
       const isBookmarked = bookmarkedSet ? bookmarkedSet.has(key) : false;
-      return this.mapCourseResponse(course, populateLevel, stats, isBookmarked);
+      const reviewsBundle = reviewsMap ? reviewsMap[key] : undefined;
+      return this.mapCourseResponse(course, populateLevel, stats, isBookmarked, reviewsBundle);
     });
   }
 
