@@ -12,8 +12,8 @@ export class BunnyService {
     private readonly timeout: number;
 
     constructor(private configService: ConfigService) {
-        this.storageZone = this.configService.get<string>('BUNNY_STORAGE_ZONE', 'bsohula');
-        this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY', 'c7fbeb57-331c-4510-a04d979b0515-1729-4670');
+        this.storageZone = this.configService.get<string>('BUNNY_STORAGE_ZONE', 'badihy');
+        this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY', '8dc480bb-4bbf-4cc6-aef5d312b19b-d811-48a3');
         this.baseUrl = `https://storage.bunnycdn.com/${this.storageZone}`;
         this.timeout = Number(this.configService.get<string>('BUNNY_TIMEOUT_MS') || '90000');
 
