@@ -6,6 +6,7 @@ import { Course, CourseDocument } from './schemas/course.schema';
 import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
 import { CreateChapterDto } from './dto/create-chapter.dto';
+import { UpdateChapterDto } from './dto/update-chapter.dto';
 
 @Injectable()
 export class ChaptersService {
@@ -74,7 +75,7 @@ export class ChaptersService {
   /**
    * Update a chapter by ID
    */
-  async updateChapter(id: string, updateData: Partial<CreateChapterDto>): Promise<Chapter> {
+  async updateChapter(id: string, updateData: UpdateChapterDto): Promise<Chapter> {
     const updatedChapter = await this.chapterModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .exec();

@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Req, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { EnrollmentsService } from './enrollments.service';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 
 @ApiTags('Enrollment & Progress')
 @Controller('courses')
@@ -8,9 +10,14 @@ export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
   @Post(':id/enroll')
-  @ApiOperation({ summary: 'Enroll a user in a course' })
-  enroll(@Param('id') id: string, @Body('userId') userId: string) {
-    return this.enrollmentsService.enroll(id, userId);
+  @ApiBearerAuth('JWT-access')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({
+    summary: 'Enroll a user in a course',
+    description: 'يتطلب access token؛ يُستخرج معرّف المستخدم من الرمز وليس من الجسم.',
+  })
+  enroll(@Param('id') id: string, @Req() req: Request & { user: { id: string } }) {
+    return this.enrollmentsService.enroll(id, req.user.id);
   }
 
   @Get(':id/progress/:userId')

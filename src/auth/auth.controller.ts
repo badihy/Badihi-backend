@@ -48,7 +48,7 @@ export class AuthController {
     return this.authService.issueTokensFromOAuthGuardPayload(req.user);
   }
 
-  @ApiBearerAuth()
+  @ApiBearerAuth('JWT-refresh')
   @UseGuards(AuthGuard('jwt-refresh'))
   @Get('refresh')
   refreshTokens(@Request() req) {

@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
+import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Chapters')
@@ -28,7 +29,7 @@ export class ChaptersController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a chapter by ID' })
-  updateChapter(@Param('id') id: string, @Body() updateData: Partial<CreateChapterDto>) {
+  updateChapter(@Param('id') id: string, @Body() updateData: UpdateChapterDto) {
     return this.chaptersService.updateChapter(id, updateData);
   }
 

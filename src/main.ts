@@ -34,11 +34,28 @@ async function bootstrap() {
     .setTitle('Badihi API')
     .setDescription('Badihi API description')
     .setVersion('1.0')
-    .addCookieAuth('token', {
-      type: 'http',
-      scheme: 'bearer',
-      bearerFormat: 'JWT',
-    })
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description:
+          'استخدم refresh token في ترويسة Authorization: Bearer <refresh_token> (مطلوب لـ GET /auth/refresh).',
+        in: 'header',
+      },
+      'JWT-refresh',
+    )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description:
+          'استخدم access token في ترويسة Authorization: Bearer <access_token> (مثلاً من تسجيل الدخول).',
+        in: 'header',
+      },
+      'JWT-access',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
