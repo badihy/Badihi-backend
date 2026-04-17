@@ -102,4 +102,21 @@ export class CoursesController {
     return this.coursesService.remove(id);
   }
 
+  @Get('enrolled')
+  @ApiOperation({ summary: 'Get all courses enrolled by the user with pagination, search, and filtering' })
+  @ApiQuery({ name: 'page', type: Number, required: false, description: 'Page number for pagination' })
+  @ApiQuery({ name: 'limit', type: Number, required: false, description: 'Number of items per page' })
+  @ApiQuery({ name: 'search', type: String, required: false, description: 'Search term for course titles' })
+  @ApiQuery({ name: 'filter', type: String, required: false, description: 'Filter criteria (e.g., category)' })
+  async findEnrolledCourses(
+    @Req() req: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('search') search?: string,
+    @Query('filter') filter?: string,
+  ) {
+    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    return await this.coursesService.findEnrolledCourses(userId, { page, limit, search, filter });
+  }
+
 }

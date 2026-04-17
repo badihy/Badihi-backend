@@ -721,4 +721,29 @@ export class CoursesService {
     return deletedCourse!;
   }
 
+  async findEnrolledCourses(
+    userId: string,
+    options: { page: number; limit: number; search?: string; filter?: string },
+  ): Promise<{ courses: Course[]; total: number }> {
+    const { page, limit, search, filter } = options;
+
+    const query: any = { 'enrollments.userId': userId };
+
+    // Apply search filter
+    if (search) {
+      query.title = { $regex: search, $options: 'i' }; // Case-insensitive search
+    }
+
+    // Apply additional filters
+    if (filter) {
+      query.category = filter; // Example: filter by category
+    }
+
+    // Pagination
+    const skip = (page - 1) * limit;
+    const total = await this.courseModel.countDocuments(query);
+    const courses = await this.courseModel.find(query).skip(skip).limit(limit).exec();
+
+    return { courses, total };
+  }
 }
