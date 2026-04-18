@@ -26,12 +26,6 @@ export class User {
     password: string;
 
     @Prop({
-        unique: true,
-        sparse: true,
-    })
-    firebaseUid?: string;
-
-    @Prop({
         required: false,
     })
     phone: string;

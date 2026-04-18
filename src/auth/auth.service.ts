@@ -7,13 +7,42 @@ import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { User } from '../user/schemas/user.schema';
 
-import { FirebaseLoginDto } from './dto/firebase-login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import * as crypto from 'crypto';
 import { EmailService } from '../common/services/email.service';
-import * as admin from 'firebase-admin';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { OAuth2Client, TokenPayload } from 'google-auth-library';
+
+const googleClient = new OAuth2Client();
+
+function getAllowedGoogleClientIds(): string[] {
+    return [process.env.GOOGLE_CLIENT_ID_MOBILE]
+        .filter(Boolean)
+        .map((value) => (typeof value === 'string' ? value.trim() : ''))
+        .filter(Boolean);
+}
+
+async function verifyGoogleIdToken(idToken: string): Promise<TokenPayload> {
+    const audience = getAllowedGoogleClientIds();
+
+    if (audience.length === 0) {
+        throw new Error('No Google client IDs configured for ID token verification');
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+        idToken,
+        audience,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload) {
+        throw new Error('Failed to verify Google ID token');
+    }
+
+    return payload;
+}
 
 @Injectable()
 export class AuthService {
@@ -22,34 +51,8 @@ export class AuthService {
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
         private readonly emailService: EmailService,
-        @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: typeof admin,
     ) { }
 
-    /**
-     * Web Google OAuth (passport-google-oauth20) — find or create local user by email.
-     */
-    async validateOAuthUser(
-        userProfile: {
-            email: string;
-            firstName?: string;
-            lastName?: string;
-            picture?: string;
-            providerId: string;
-            accessToken?: string;
-        },
-        _provider: string,
-    ): Promise<UserDocument> {
-        return this.userService.findOrCreateGoogleUser({
-            email: userProfile.email,
-            firstName: userProfile.firstName,
-            lastName: userProfile.lastName,
-            picture: userProfile.picture,
-        });
-    }
-
-    /**
-     * Issue access + refresh tokens, persist hashed refresh token (same as email/password login).
-     */
     async issueTokenPairForUser(user: UserDocument): Promise<TokenResponseDto> {
         const tokens = await this.getTokens(user._id, user.email);
         await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
@@ -67,31 +70,22 @@ export class AuthService {
         };
     }
 
-    /**
-     * After FirebaseGuard: payload is { uid, email?, name?, provider? } — sync to User then issue tokens.
-     */
-    async issueTokensFromOAuthGuardPayload(payload: {
+    async issueTokensFromGooglePayload(payload: {
         uid: string;
         email?: string;
         name?: string;
+        profileImage?: string;
         provider?: string;
     }): Promise<TokenResponseDto> {
-        let user: UserDocument | null = await this.userService.findByFirebaseUid(payload.uid);
-
-        if (!user && payload.email) {
-            const byEmail = await this.userService.findOneByEmail(payload.email);
-            if (byEmail) {
-                user = await this.userService.linkFirebaseUid(byEmail._id.toString(), payload.uid);
-            }
+        if (!payload.email) {
+            throw new UnauthorizedException('Google account email is required');
         }
 
-        if (!user) {
-            user = await this.userService.createFromFirebase({
-                uid: payload.uid,
-                email: payload.email,
-                fullName: payload.name,
-            });
-        }
+        const user = await this.userService.findOrCreateGoogleUser({
+            email: payload.email,
+            fullName: payload.name,
+            picture: payload.profileImage,
+        });
 
         if (!user) {
             throw new UnauthorizedException('تعذر إنشاء أو استرجاع المستخدم');
@@ -129,7 +123,6 @@ export class AuthService {
                 profileImage: user.profileImage,
                 isVerified: user.isVerified,
                 fullName: user.fullName,
-                firebaseUid: user.firebaseUid,
             }
         };
     }
@@ -183,73 +176,6 @@ export class AuthService {
         };
     }
 
-    async loginWithFirebase(firebaseLoginDto: FirebaseLoginDto) {
-        let uid: string | undefined;
-        let email: string | undefined;
-        let fullName: string | undefined;
-        let profileImage: string | undefined;
-
-        if (firebaseLoginDto.idToken) {
-            try {
-                const decodedToken = await this.firebaseAdmin.auth().verifyIdToken(firebaseLoginDto.idToken);
-                uid = decodedToken.uid;
-                email = decodedToken.email;
-                fullName = decodedToken.name;
-                profileImage = decodedToken.picture;
-            } catch {
-                throw new UnauthorizedException('رمز Firebase غير صالح');
-            }
-        } else if (firebaseLoginDto.uid) {
-            uid = firebaseLoginDto.uid;
-            try {
-                const firebaseUser = await this.firebaseAdmin.auth().getUser(uid);
-                email = firebaseUser.email;
-                fullName = firebaseUser.displayName || undefined;
-                profileImage = firebaseUser.photoURL || undefined;
-            } catch {
-                throw new UnauthorizedException('معرف Firebase غير صالح');
-            }
-        } else {
-            throw new BadRequestException('idToken أو uid مطلوب');
-        }
-
-        const resolvedUid = uid as string;
-
-        // 1) Find existing Firebase-linked account by UID
-        let user = await this.userService.findByFirebaseUid(resolvedUid);
-
-        // 2) If same email already exists in local account, link it to this Firebase UID
-        if (!user && email) {
-            const existingByEmail = await this.userService.findOneByEmail(email);
-            if (existingByEmail) {
-                user = await this.userService.linkFirebaseUid(existingByEmail._id.toString(), resolvedUid);
-            }
-        }
-
-        // 3) First-time Firebase sign-in: create local account from decoded token payload
-        if (!user) {
-            user = await this.userService.createFromFirebase({ uid: resolvedUid, email, fullName, profileImage });
-        }
-
-        // Issue the same access + refresh token pair as a normal login
-        const tokens = await this.getTokens(user._id, user.email);
-        await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
-
-        return {
-            token: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-            user: {
-                _id: user._id,
-                username: user.username,
-                email: user.email,
-                phone: user.phone,
-                profileImage: user.profileImage,
-                isVerified: user.isVerified,
-                fullName: user.fullName,
-                firebaseUid: user.firebaseUid,
-            },
-        };
-    }
     async forgotPassword(forgotPasswordDto: ForgotPasswordDto) {
         const user = await this.userService.findOneByEmail(forgotPasswordDto.email);
         if (!user) {
@@ -286,5 +212,35 @@ export class AuthService {
             throw new BadRequestException('رمز التحقق غير صحيح أو منتهي الصلاحية');
         }
         return { message: 'تم التحقق من البريد الإلكتروني بنجاح' };
+    }
+
+    async googleSignInMobile(idToken: string): Promise<TokenResponseDto> {
+        if (!idToken?.trim()) {
+            throw new BadRequestException('idToken مطلوب');
+        }
+
+        const payload = await this.verifyMobileIdentityToken(idToken);
+        return this.issueTokensFromGooglePayload(payload);
+    }
+
+    private async verifyMobileIdentityToken(idToken: string): Promise<{
+        uid: string;
+        email?: string;
+        name?: string;
+        profileImage?: string;
+        provider?: string;
+    }> {
+        try {
+            const payload = await verifyGoogleIdToken(idToken);
+            return {
+                uid: payload.sub,
+                email: payload.email,
+                name: payload.name,
+                profileImage: payload.picture,
+                provider: 'google',
+            };
+        } catch {
+            throw new UnauthorizedException('Invalid or expired ID token');
+        }
     }
 }

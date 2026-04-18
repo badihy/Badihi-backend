@@ -60,20 +60,19 @@ export class UserService {
     const tokens = await this.authService.getTokens(user._id, user.email);
     await this.authService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
-    return {
-      token: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: {
-        _id: user._id,
+        return {
+          token: tokens.accessToken,
+          refreshToken: tokens.refreshToken,
+          user: {
+            _id: user._id,
         username: user.username,
         email: user.email,
-        phone: user.phone,
-        profileImage: user.profileImage,
-        isVerified: user.isVerified,
-        fullName: user.fullName,
-        firebaseUid: user.firebaseUid,
-      },
-    };
+            phone: user.phone,
+            profileImage: user.profileImage,
+            isVerified: user.isVerified,
+            fullName: user.fullName,
+          },
+        };
   }
 
   async findAll() {
@@ -86,36 +85,6 @@ export class UserService {
 
   async findOneByEmail(email: string) {
     return await this.userModel.findOne({ email });
-  }
-
-  async findByFirebaseUid(uid: string) {
-    return await this.userModel.findOne({ firebaseUid: uid });
-  }
-
-  async createFromFirebase(payload: { uid: string; email?: string; fullName?: string; profileImage?: string }) {
-    const { uid, email, fullName, profileImage } = payload;
-
-    // Try linking to an existing account that already has this UID
-    const existing = await this.findByFirebaseUid(uid);
-    if (existing) return existing;
-
-    const fallbackEmail = `${uid}@firebase.local`;
-    const safeEmail = email || fallbackEmail;
-    const safeFullName = fullName || 'Google User';
-    const username = await this.generateUniqueUsername(safeEmail, safeFullName);
-
-    return await this.userModel.create({
-      username,
-      email: safeEmail,
-      fullName: safeFullName,
-      profileImage,
-      firebaseUid: uid,
-      isVerified: true, // Firebase auth is already verified on the client side
-    });
-  }
-
-  async linkFirebaseUid(userId: string, uid: string) {
-    return await this.userModel.findByIdAndUpdate(userId, { firebaseUid: uid }, { new: true });
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
@@ -231,13 +200,12 @@ export class UserService {
 
   async findOrCreateGoogleUser(payload: {
     email: string;
-    firstName?: string;
-    lastName?: string;
+    fullName?: string;
     picture?: string;
   }) {
     let user = await this.findOneByEmail(payload.email);
     if (user) return user;
-    const fullName = `${payload.firstName || ''} ${payload.lastName || ''}`.trim() || 'Google User';
+    const fullName = payload.fullName || 'Google User';
     const username = await this.generateUniqueUsername(payload.email, fullName);
     return await this.userModel.create({
       email: payload.email,

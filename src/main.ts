@@ -56,6 +56,16 @@ async function bootstrap() {
       },
       'JWT-access',
     )
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'ID Token',
+        description: 'Use ID token for mobile authentication.',
+        in: 'header',
+      },
+      'ID-token',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {

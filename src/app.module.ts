@@ -7,11 +7,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './auth/auth.module';
-import { FirebaseModule } from './firebase/firebase.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { google } from 'googleapis';
 import { CoursesModule } from './courses/courses.module';
 import { CategoriesModule } from './categories/categories.module';
 import { SlidesModule } from './slides/slides.module';
@@ -33,40 +31,28 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
   imports: [ConfigModule],
   inject: [ConfigService],
   useFactory: async (configService: ConfigService) => {
-    const user = configService.get<string>('EMAIL_FROM') || configService.get<string>('SMTP_USER');
-    if (!user) throw new Error('Missing EMAIL_FROM (gmail address)');
+    const host = configService.get<string>('EMAIL_HOST');
+    const port = Number(configService.get<string>('EMAIL_PORT') || '465');
+    const user = configService.get<string>('EMAIL_USERNAME');
+    const pass = configService.get<string>('EMAIL_PASSWORD');
+    const from = configService.get<string>('EMAIL_FROM') || user;
 
-    const clientId = configService.get<string>('GOOGLE_CLIENT_ID');
-    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
-    const redirectUri =
-      configService.get<string>('GOOGLE_REDIRECT_URI') || 'https://developers.google.com/oauthplayground';
-    const refreshToken = configService.get<string>('GOOGLE_REFRESH_TOKEN');
-
-    if (!clientId || !clientSecret || !refreshToken) {
-      throw new Error('Missing GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET / GOOGLE_REFRESH_TOKEN');
+    if (!host || !user || !pass || !from) {
+      throw new Error('Missing EMAIL_HOST / EMAIL_USERNAME / EMAIL_PASSWORD / EMAIL_FROM');
     }
-
-    const oAuth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-    oAuth2Client.setCredentials({ refresh_token: refreshToken });
-
-    const accessTokenResponse = await oAuth2Client.getAccessToken();
-    const accessToken = accessTokenResponse?.token;
-    if (!accessToken) throw new Error('Failed to get Google access token');
 
     return {
       transport: {
-        service: 'gmail',
+        host,
+        port,
+        secure: port === 465,
         auth: {
-          type: 'OAuth2',
           user,
-          clientId,
-          clientSecret,
-          refreshToken,
-          accessToken,
+          pass,
         },
       },
       defaults: {
-        from: `"Badihi" <${user}>`,
+        from: `"Badihi" <${from}>`,
       },
     };
   },
@@ -74,7 +60,6 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     DatabaseModule,
     UserModule,
     AuthModule,
-    FirebaseModule,
     CoursesModule,
     CategoriesModule,
     SlidesModule,
