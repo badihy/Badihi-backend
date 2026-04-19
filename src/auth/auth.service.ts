@@ -187,7 +187,6 @@ export class AuthService {
 
         await this.userService.updateResetToken(user._id.toString(), token, expires);
         await this.emailService.sendResetPasswordEmail(user.email, user.fullName || 'User', token);
-        console.log(`Reset Password Token for ${user.email}: ${token}`);
 
         return { message: 'تم إرسال بريد إعادة تعيين كلمة المرور' };
     }

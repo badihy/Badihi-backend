@@ -14,12 +14,7 @@ export class CategoriesService {
     ) { }
 
     async create(createCategoryDto: CreateCategoryDto, file: Express.Multer.File): Promise<Category> {
-        let imageUrl = '';
-        console.log(file);
-        if (file) {
-
-            imageUrl = await this.bunnyService.uploadFile(file);
-        }
+        const imageUrl = file ? await this.bunnyService.uploadFile(file) : '';
         const createdCategory = new this.categoryModel({ ...createCategoryDto, image: imageUrl });
         return createdCategory.save();;
     }
@@ -33,20 +28,33 @@ export class CategoriesService {
     }
 
     async update(id: string, updateCategoryDto: UpdateCategoryDto, file: Express.Multer.File): Promise<Category | null> {
-        let imageUrl = '';
+        const existingCategory = await this.categoryModel.findById(id).exec();
+        if (!existingCategory) {
+            return null;
+        }
+
+        const updateData: Record<string, unknown> = { ...updateCategoryDto };
+        let previousImageUrl: string | undefined;
+
         if (file) {
-            imageUrl = await this.bunnyService.uploadFile(file);
+            updateData.image = await this.bunnyService.uploadFile(file);
+            previousImageUrl = existingCategory.image;
         }
-        const updatedCategory = await this.categoryModel.findByIdAndUpdate(id, { ...updateCategoryDto, image: imageUrl }, { new: true }).exec();
-        if (updatedCategory && file) {
-            await this.bunnyService.deleteFile(updatedCategory.image);
+
+        const updatedCategory = await this.categoryModel
+            .findByIdAndUpdate(id, updateData, { new: true })
+            .exec();
+
+        if (updatedCategory && previousImageUrl) {
+            await this.bunnyService.deleteFile(previousImageUrl);
         }
+
         return updatedCategory;
     }
 
     async remove(id: string): Promise<Category | null> {
         const category = await this.categoryModel.findByIdAndDelete(id).exec();
-        if (category) {
+        if (category?.image) {
             await this.bunnyService.deleteFile(category.image);
         }
         return category;

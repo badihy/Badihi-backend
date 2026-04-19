@@ -13,12 +13,12 @@ export class BunnyService {
 
     constructor(private configService: ConfigService) {
         this.storageZone = this.configService.get<string>('BUNNY_STORAGE_ZONE', 'badihy');
-        this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY', '8dc480bb-4bbf-4cc6-aef5d312b19b-d811-48a3');
+        this.apiKey = this.configService.get<string>('BUNNY_STORAGE_KEY') || '';
         this.baseUrl = `https://storage.bunnycdn.com/${this.storageZone}`;
         this.timeout = Number(this.configService.get<string>('BUNNY_TIMEOUT_MS') || '90000');
 
         if (!this.apiKey) {
-            this.logger.warn('مفتاح BUNNY_API_KEY غير مُكوّن. ستفشل عمليات تحميل الملفات.');
+            this.logger.warn('مفتاح BUNNY_STORAGE_KEY غير مُكوّن. ستفشل عمليات تحميل الملفات.');
         }
     }
 
@@ -116,7 +116,7 @@ export class BunnyService {
 
             this.logger.log(`Uploading video: ${file.originalname} (${file.size} bytes)`);
 
-            const response = await this.makeRequest({
+            await this.makeRequest({
                 method: 'PUT',
                 url: uploadUrl,
                 data: file.buffer,
@@ -125,8 +125,6 @@ export class BunnyService {
                     'Content-Type': file.mimetype,
                 },
             });
-
-            console.log(response);
 
             const cdnUrl = `https://${this.storageZone}.b-cdn.net/${file.originalname}`;
             this.logger.log(`Video uploaded successfully: ${cdnUrl}`);
