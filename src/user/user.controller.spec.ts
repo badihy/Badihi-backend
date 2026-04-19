@@ -7,7 +7,6 @@ describe('UserController', () => {
   let controller: UserController;
   const userServiceMock = {
     create: jest.fn(),
-    findAll: jest.fn(),
     findById: jest.fn(),
     update: jest.fn(),
     updateUsername: jest.fn(),
@@ -23,6 +22,12 @@ describe('UserController', () => {
 
     controller = module.get<UserController>(UserController);
     jest.clearAllMocks();
+  });
+
+  it('returns the authenticated user profile from GET /user', async () => {
+    await controller.getProfile('user-1');
+
+    expect(userServiceMock.findById).toHaveBeenCalledWith('user-1');
   });
 
   it('allows reading the authenticated user profile', async () => {

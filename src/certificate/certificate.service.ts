@@ -18,9 +18,7 @@ export class CertificateService {
     @InjectModel(Chapter.name) private readonly chapterModel: Model<ChapterDocument>,
   ) { }
 
-  async issue(issueCertificateDto: IssueCertificateDto) {
-    const { userId, courseId } = issueCertificateDto;
-
+  async issue(userId: string, courseId: string) {
     const user = await this.userModel.findById(userId);
     if (!user) {
       throw new NotFoundException('المستخدم غير موجود');
@@ -59,10 +57,9 @@ export class CertificateService {
       .sort({ createdAt: -1 });
   }
 
-  async findOne(id: string) {
+  async findOneForUser(id: string, userId: string) {
     const certificate = await this.certificateModel
-      .findById(id)
-      .populate('user', 'fullName username email')
+      .findOne({ _id: id, user: userId })
       .populate('course', 'name description');
 
     if (!certificate) {
