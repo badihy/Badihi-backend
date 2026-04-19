@@ -1,10 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsMongoId, IsNotEmpty } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-/** جسم طلبات التقدم (درس/اختبار) — معرّف المستخدم */
+/** جسم طلبات التقدم (درس/اختبار) فارغ لأن المستخدم يُستخرج من access token */
 export class MarkEnrollmentUserDto {
-  @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'معرّف المستخدم (Mongo ObjectId)' })
-  @IsMongoId()
-  @IsNotEmpty()
-  userId: string;
+  @ApiPropertyOptional({
+    deprecated: true,
+    description: 'لم يعد هذا الحقل مستخدماً؛ يُحدد المستخدم من access token.',
+  })
+  readonly userId?: never;
 }

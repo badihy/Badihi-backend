@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Req } from '@nestjs/common';
+import { Body, Controller, ForbiddenException, Get, Param, Post, Req } from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import {
   ApiBearerAuth,
@@ -10,6 +10,7 @@ import {
 import type { Request } from 'express';
 import { MarkEnrollmentUserDto } from './dto/mark-enrollment-user.dto';
 import { AddOrUpdateCourseReviewDto } from './dto/add-or-update-course-review.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Enrollment & Progress')
 @ApiBearerAuth('JWT-access')
@@ -36,7 +37,12 @@ export class EnrollmentsController {
   @ApiParam({ name: 'id', description: 'معرّف الدورة' })
   @ApiParam({ name: 'userId', description: 'معرّف المستخدم' })
   @ApiOperation({ summary: 'Get user progress for a course' })
-  getCourseProgress(@Param('id') id: string, @Param('userId') userId: string) {
+  getCourseProgress(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @CurrentUser('id') currentUserId: string,
+  ) {
+    this.ensureOwnUserScope(userId, currentUserId);
     return this.enrollmentsService.getEnrollment(id, userId);
   }
 
@@ -48,8 +54,10 @@ export class EnrollmentsController {
     @Param('id') courseId: string,
     @Param('lessonId') lessonId: string,
     @Body() body: MarkEnrollmentUserDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.enrollmentsService.markLessonCompleted(courseId, body.userId, lessonId);
+    void body;
+    return this.enrollmentsService.markLessonCompleted(courseId, userId, lessonId);
   }
 
   @Post(':id/progress/quiz/:quizId')
@@ -60,8 +68,10 @@ export class EnrollmentsController {
     @Param('id') courseId: string,
     @Param('quizId') quizId: string,
     @Body() body: MarkEnrollmentUserDto,
+    @CurrentUser('id') userId: string,
   ) {
-    return this.enrollmentsService.markQuizCompleted(courseId, body.userId, quizId);
+    void body;
+    return this.enrollmentsService.markQuizCompleted(courseId, userId, quizId);
   }
 
   @Post(':id/reviews')
@@ -70,10 +80,11 @@ export class EnrollmentsController {
   addOrUpdateReview(
     @Param('id') courseId: string,
     @Body() body: AddOrUpdateCourseReviewDto,
+    @CurrentUser('id') userId: string,
   ) {
     return this.enrollmentsService.addOrUpdateReview(
       courseId,
-      body.userId,
+      userId,
       body.rating,
       body.comment,
     );
@@ -84,5 +95,11 @@ export class EnrollmentsController {
   @ApiOperation({ summary: 'جلب جميع التقييمات والتعليقات لدورة تدريبية' })
   getCourseReviews(@Param('id') courseId: string) {
     return this.enrollmentsService.getCourseReviews(courseId);
+  }
+
+  private ensureOwnUserScope(userId: string, currentUserId: string) {
+    if (!currentUserId || userId !== currentUserId) {
+      throw new ForbiddenException('لا يمكنك الوصول إلى بيانات مستخدم آخر');
+    }
   }
 }
