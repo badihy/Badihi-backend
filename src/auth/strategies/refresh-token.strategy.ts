@@ -3,6 +3,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { UserRole } from '../enums/user-role.enum';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
@@ -23,6 +24,6 @@ export class RefreshTokenStrategy extends PassportStrategy(
 
     validate(req: Request, payload: any) {
         const refreshToken = req.get('Authorization')?.replace('Bearer', '').trim();
-        return { ...payload, refreshToken };
+        return { ...payload, role: payload?.role ?? UserRole.USER, refreshToken };
     }
 }

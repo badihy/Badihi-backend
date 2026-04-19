@@ -46,7 +46,7 @@ export class CategoriesService {
             .exec();
 
         if (updatedCategory && previousImageUrl) {
-            await this.bunnyService.deleteFile(previousImageUrl);
+            await this.bunnyService.removeFileIfExists(previousImageUrl);
         }
 
         return updatedCategory;
@@ -54,9 +54,7 @@ export class CategoriesService {
 
     async remove(id: string): Promise<Category | null> {
         const category = await this.categoryModel.findByIdAndDelete(id).exec();
-        if (category?.image) {
-            await this.bunnyService.deleteFile(category.image);
-        }
+        await this.bunnyService.removeFileIfExists(category?.image);
         return category;
     }
 }

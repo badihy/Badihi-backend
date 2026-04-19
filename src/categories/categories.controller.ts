@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Categories')
 @ApiBearerAuth('JWT-access')
@@ -12,6 +14,7 @@ export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) { }
 
   @Post()
+  @Roles(UserRole.ADMIN)
   @UseInterceptors(FileFieldsInterceptor([{
     name: 'image',
     maxCount: 1
@@ -35,6 +38,7 @@ export class CategoriesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN)
   @UseInterceptors(FileFieldsInterceptor([
     {
       name: 'image',
@@ -48,6 +52,7 @@ export class CategoriesController {
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a category' })
   remove(@Param('id') id: string) {
     return this.categoriesService.remove(id);

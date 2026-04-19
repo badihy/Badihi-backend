@@ -3,6 +3,8 @@ import { SlidesService } from './slides.service';
 import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Slides')
 @ApiBearerAuth('JWT-access')
@@ -11,6 +13,7 @@ export class SlidesController {
   constructor(private readonly slidesService: SlidesService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'إنشاء شريحة جديدة وربطها بدرس' })
   create(@Body() createSlideDto: CreateSlideDto) {
     return this.slidesService.create(createSlideDto);
@@ -30,12 +33,14 @@ export class SlidesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'تحديث شريحة بواسطة المعرف' })
   update(@Param('id') id: string, @Body() updateSlideDto: UpdateSlideDto) {
     return this.slidesService.update(id, updateSlideDto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'حذف شريحة بواسطة المعرف' })
   remove(@Param('id') id: string) {
     return this.slidesService.remove(id);

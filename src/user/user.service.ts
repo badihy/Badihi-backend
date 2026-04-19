@@ -2,11 +2,11 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException, 
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import { Connection, Model } from 'mongoose';
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../common/services/email.service';
 import { AuthService } from '../auth/auth.service';
@@ -17,6 +17,7 @@ import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.sc
 import { Report, ReportDocument } from '../reports/schemas/report.schema';
 import { Certificate, CertificateDocument } from '../certificate/schemas/certificate.schema';
 import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @Injectable()
 export class UserService {
@@ -26,6 +27,7 @@ export class UserService {
     @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
     @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
     @InjectModel(Bookmark.name) private readonly bookmarkModel: Model<BookmarkDocument>,
+    @InjectConnection() private readonly connection: Connection,
     private readonly emailService: EmailService,
     @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
     private readonly bunnyService: BunnyService,
@@ -71,6 +73,7 @@ export class UserService {
             profileImage: user.profileImage,
             isVerified: user.isVerified,
             fullName: user.fullName,
+            role: user.role ?? UserRole.USER,
           },
         };
   }
@@ -119,6 +122,12 @@ export class UserService {
     if (!file) {
       throw new BadRequestException('صورة الملف الشخصي مطلوبة');
     }
+
+    const existingUser = await this.userModel.findById(id);
+    if (!existingUser) {
+      throw new NotFoundException('المستخدم غير موجود');
+    }
+
     const profileImage = await this.bunnyService.uploadFile(file);
     const updatedUser = await this.userModel.findByIdAndUpdate(
       id,
@@ -127,7 +136,12 @@ export class UserService {
     );
 
     if (!updatedUser) {
+      await this.bunnyService.removeFileIfExists(profileImage);
       throw new NotFoundException('المستخدم غير موجود');
+    }
+
+    if (existingUser.profileImage && existingUser.profileImage !== profileImage) {
+      await this.bunnyService.removeFileIfExists(existingUser.profileImage);
     }
 
     return updatedUser;
@@ -217,16 +231,28 @@ export class UserService {
   }
 
   async remove(id: string) {
-    // Clean up related entities owned by this user
-    await this.enrollmentModel.deleteMany({ user: id });
-    await this.bookmarkModel.deleteMany({ user: id });
-    await this.reportModel.deleteMany({ userId: id });
-    await this.certificateModel.deleteMany({ user: id });
+    const session = await this.connection.startSession();
+    let deletedUserProfileImage: string | undefined;
 
-    const deletedUser = await this.userModel.findByIdAndDelete(id);
-    if (!deletedUser) {
-      throw new NotFoundException('المستخدم غير موجود');
+    try {
+      await session.withTransaction(async () => {
+        const userToDelete = await this.userModel.findById(id).session(session);
+        if (!userToDelete) {
+          throw new NotFoundException('المستخدم غير موجود');
+        }
+        deletedUserProfileImage = userToDelete.profileImage;
+
+        await this.enrollmentModel.deleteMany({ user: id }).session(session);
+        await this.bookmarkModel.deleteMany({ user: id }).session(session);
+        await this.reportModel.deleteMany({ userId: id }).session(session);
+        await this.certificateModel.deleteMany({ user: id }).session(session);
+        await this.userModel.deleteOne({ _id: id }).session(session);
+      });
+    } finally {
+      await session.endSession();
     }
+
+    await this.bunnyService.removeFileIfExists(deletedUserProfileImage);
 
     return { message: 'تم حذف المستخدم بنجاح' };
   }

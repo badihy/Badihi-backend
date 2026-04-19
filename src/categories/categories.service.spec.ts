@@ -14,6 +14,7 @@ describe('CategoriesService', () => {
   const bunnyServiceMock = {
     uploadFile: jest.fn(),
     deleteFile: jest.fn(),
+    removeFileIfExists: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -47,7 +48,7 @@ describe('CategoriesService', () => {
       { name: 'Updated' },
       { new: true },
     );
-    expect(bunnyServiceMock.deleteFile).not.toHaveBeenCalled();
+    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalled();
   });
 
   it('deletes the previous image after uploading a replacement', async () => {
@@ -70,7 +71,7 @@ describe('CategoriesService', () => {
       { name: 'Updated', image: 'new-image-url' },
       { new: true },
     );
-    expect(bunnyServiceMock.deleteFile).toHaveBeenCalledWith('old-image-url');
-    expect(bunnyServiceMock.deleteFile).not.toHaveBeenCalledWith('new-image-url');
+    expect(bunnyServiceMock.removeFileIfExists).toHaveBeenCalledWith('old-image-url');
+    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalledWith('new-image-url');
   });
 });

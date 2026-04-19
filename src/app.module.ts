@@ -16,6 +16,7 @@ import { ReportsModule } from './reports/reports.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { RolesGuard } from './auth/guards/roles.guard';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -69,6 +70,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     BookmarksModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}

@@ -208,4 +208,16 @@ export class BunnyService {
         }
     }
 
+    async removeFileIfExists(fileUrl?: string | null): Promise<void> {
+        if (!fileUrl) {
+            return;
+        }
+
+        try {
+            await this.deleteFile(fileUrl);
+        } catch (error: any) {
+            this.logger.warn(`Skipping file cleanup for ${fileUrl}: ${error?.message || error}`);
+        }
+    }
+
 }

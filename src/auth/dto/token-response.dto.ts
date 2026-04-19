@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { UserRole } from '../enums/user-role.enum';
 
 export class TokenResponseDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
@@ -15,6 +16,7 @@ export class TokenResponseDto {
       phone: '+1234567890',
       name: 'John Doe',
       profileImage: 'https://example.com/avatar.jpg',
+      role: UserRole.USER,
     },
   })
   user: {
@@ -24,5 +26,6 @@ export class TokenResponseDto {
     phone?: string;
     name: string;
     profileImage?: string;
+    role?: UserRole;
   };
 }

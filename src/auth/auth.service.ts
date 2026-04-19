@@ -13,6 +13,7 @@ import * as crypto from 'crypto';
 import { EmailService } from '../common/services/email.service';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
+import { UserRole } from './enums/user-role.enum';
 
 const googleClient = new OAuth2Client();
 
@@ -66,6 +67,7 @@ export class AuthService {
                 phone: user.phone,
                 name: user.fullName,
                 profileImage: user.profileImage,
+                role: user.role ?? UserRole.USER,
             },
         };
     }
@@ -123,6 +125,7 @@ export class AuthService {
                 profileImage: user.profileImage,
                 isVerified: user.isVerified,
                 fullName: user.fullName,
+                role: user.role ?? UserRole.USER,
             }
         };
     }
@@ -153,16 +156,18 @@ export class AuthService {
     }
 
     async getTokens(userId: any, email: string) {
+        const user = await this.userService.findById(String(userId));
+        const role = user?.role ?? UserRole.USER;
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.signAsync(
-                { id: userId, email },
+                { id: userId, email, role },
                 {
                     secret: this.configService.get<string>('JWT_SECRET'),
                     expiresIn: '15m',
                 },
             ),
             this.jwtService.signAsync(
-                { id: userId, email },
+                { id: userId, email, role },
                 {
                     secret: this.configService.get<string>('JWT_REFRESH_SECRET'),
                     expiresIn: '7d',

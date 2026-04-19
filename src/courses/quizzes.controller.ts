@@ -2,6 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { QuizzesService } from './quizzes.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Quizzes')
 @ApiBearerAuth('JWT-access')
@@ -10,6 +12,7 @@ export class QuizzesController {
   constructor(private readonly quizzesService: QuizzesService) {}
 
   @Post()
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create a new quiz inside a chapter (chapter must have no lessons)' })
   createQuiz(@Body() createQuizDto: CreateQuizDto) {
     return this.quizzesService.createQuiz(createQuizDto);
@@ -28,12 +31,14 @@ export class QuizzesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a quiz by ID' })
   updateQuiz(@Param('id') id: string, @Body() updateData: Partial<CreateQuizDto>) {
     return this.quizzesService.updateQuiz(id, updateData);
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete a quiz and unlink it from its chapter' })
   removeQuiz(@Param('id') id: string) {
     return this.quizzesService.removeQuiz(id);

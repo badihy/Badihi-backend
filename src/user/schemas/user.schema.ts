@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
 import mongoose, { Document } from "mongoose";
+import { UserRole } from '../../auth/enums/user-role.enum';
 
 @Schema({ timestamps: true })
 export class User {
@@ -40,6 +41,13 @@ export class User {
     })
     isVerified: boolean;
 
+    @Prop({
+        type: String,
+        enum: UserRole,
+        default: UserRole.USER,
+    })
+    role: UserRole;
+
     @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }], default: [] })
     enrolledCourses?: mongoose.Types.ObjectId[];
 
@@ -53,9 +61,6 @@ export class User {
     })
     resetPasswordToken?: string;
 
-    @Prop({
-        required: false,
-    })
     @Prop({
         required: false,
     })

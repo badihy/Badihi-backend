@@ -4,6 +4,8 @@ import { CreateReportDto } from './dto/create-report.dto';
 import { ReportsService } from './reports.service';
 import { UpdateReportStatusDto } from './dto/update-report-status.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Reports')
 @ApiBearerAuth('JWT-access')
@@ -28,24 +30,28 @@ export class ReportsController {
   }
 
   @Get()
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all reports' })
   findAll() {
     return this.reportsService.findAll();
   }
 
   @Get(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get report by id' })
   findOne(@Param('id') id: string) {
     return this.reportsService.findOne(id);
   }
 
   @Patch(':id/status')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update report status' })
   updateStatus(@Param('id') id: string, @Body() updateReportStatusDto: UpdateReportStatusDto) {
     return this.reportsService.updateStatus(id, updateReportStatusDto);
   }
 
   @Delete(':id')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Delete report' })
   remove(@Param('id') id: string) {
     return this.reportsService.remove(id);
