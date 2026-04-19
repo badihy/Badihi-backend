@@ -287,4 +287,12 @@ export class AuthService {
         }
         return { message: 'تم التحقق من البريد الإلكتروني بنجاح' };
     }
+
+    /**
+     * إصدار زوج التوكنات بعد OAuth (مثلاً Google ID token) — نفس منطق بقية التطبيق:
+     * حمولة JWT { id, email }، أسرار JWT_SECRET / JWT_REFRESH_SECRET، وحفظ refresh المُجزأ.
+     */
+    async generateTokens(user: UserDocument): Promise<TokenResponseDto> {
+        return this.issueTokenPairForUser(user);
+    }
 }

@@ -47,7 +47,21 @@ export class AuthController {
     type: TokenResponseDto,
   })
   async googleIdToken(@Req() req: any): Promise<TokenResponseDto> {
-    return this.authService.issueTokensFromOAuthGuardPayload(req.user);
+    const authUser = req.user;
+    const [firstName, ...lastNameParts] = (authUser.name || '').split(' ');
+
+    const user = await this.authService.validateOAuthUser(
+      {
+        email: authUser.email,
+        firstName,
+        lastName: lastNameParts.join(' '),
+        picture: authUser.picture,
+        providerId: authUser.uid,
+      },
+      'google',
+    );
+
+    return this.authService.generateTokens(user);
   }
 
   @ApiBearerAuth('JWT-refresh')
