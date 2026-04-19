@@ -78,3 +78,4 @@ export class User {
 }
 export type UserDocument = Document & User;
 export const UserSchema = SchemaFactory.createForClass(User);
+UserSchema.index({ enrolledCourses: 1 });

@@ -19,6 +19,10 @@ import { LessonsController } from './lessons.controller';
 import { QuizzesController } from './quizzes.controller';
 import { LessonsService } from './lessons.service';
 import { QuizzesService } from './quizzes.service';
+import { CourseMediaService } from './course-media.service';
+import { CourseStatsService } from './course-stats.service';
+import { CourseResponseMapperService } from './course-response-mapper.service';
+import { CourseQueryService } from './course-query.service';
 
 @Module({
   imports: [
@@ -43,6 +47,10 @@ import { QuizzesService } from './quizzes.service';
   providers: [
     CoursesService, 
     BunnyService, 
+    CourseMediaService,
+    CourseStatsService,
+    CourseResponseMapperService,
+    CourseQueryService,
     ChaptersService, 
     LessonsService,
     QuizzesService,

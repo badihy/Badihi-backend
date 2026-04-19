@@ -50,4 +50,4 @@ export class Course {
 
 export type CourseDocument = Document & Course;
 export const CourseSchema = SchemaFactory.createForClass(Course);
-
+CourseSchema.index({ category: 1 });

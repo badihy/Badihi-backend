@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { UserDocument } from '../user/schemas/user.schema';
 import { LoginDto } from '../user/dto/login.dto';
 import { ConfigService } from '@nestjs/config';
@@ -15,21 +15,99 @@ import { TokenResponseDto } from './dto/token-response.dto';
 import { OAuth2Client, TokenPayload } from 'google-auth-library';
 import { UserRole } from './enums/user-role.enum';
 
+type GoogleIdentity = {
+    uid: string;
+    email?: string;
+    name?: string;
+    profileImage?: string;
+    provider: 'google';
+};
+
+type GoogleUserInfo = {
+    sub?: string;
+    email?: string;
+    name?: string;
+    picture?: string;
+};
+
 const googleClient = new OAuth2Client();
 
-function getAllowedGoogleClientIds(): string[] {
-    return [process.env.GOOGLE_CLIENT_ID_MOBILE]
-        .filter(Boolean)
-        .map((value) => (typeof value === 'string' ? value.trim() : ''))
-        .filter(Boolean);
+function formatGoogleVerificationError(error: unknown): string {
+    const message = error instanceof Error ? error.message : 'Unknown Google ID token verification failure';
+
+    if (message.startsWith('Invalid token signature')) {
+        return 'Invalid token signature';
+    }
+
+    if (message.includes('invalid_grant')) {
+        return 'Invalid or already used Google auth code';
+    }
+
+    if (message.includes('invalid_client')) {
+        return 'Google OAuth client credentials are invalid';
+    }
+
+    if (message.includes('redirect_uri_mismatch')) {
+        return 'Google OAuth redirect URI mismatch';
+    }
+
+    return message;
+}
+
+function getGoogleClientId(): string {
+    const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
+    if (!clientId) {
+        throw new Error('GOOGLE_CLIENT_ID is not configured for ID token verification');
+    }
+    return clientId;
+}
+
+function getGoogleClientSecret(): string {
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
+    if (!clientSecret) {
+        throw new Error('GOOGLE_CLIENT_SECRET is not configured for Google auth code exchange');
+    }
+    return clientSecret;
+}
+
+function getGoogleOAuthRedirectUri(): string {
+    return process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim() || 'postmessage';
+}
+
+function createGoogleOAuthClient(): OAuth2Client {
+    return new OAuth2Client(
+        getGoogleClientId(),
+        getGoogleClientSecret(),
+        getGoogleOAuthRedirectUri(),
+    );
+}
+
+function mapGoogleTokenPayload(payload: TokenPayload): GoogleIdentity {
+    return {
+        uid: payload.sub,
+        email: payload.email,
+        name: payload.name,
+        profileImage: payload.picture,
+        provider: 'google',
+    };
+}
+
+function mapGoogleUserInfo(userInfo: GoogleUserInfo): GoogleIdentity {
+    if (!userInfo.sub) {
+        throw new Error('Google user info response did not include a subject');
+    }
+
+    return {
+        uid: userInfo.sub,
+        email: userInfo.email,
+        name: userInfo.name,
+        profileImage: userInfo.picture,
+        provider: 'google',
+    };
 }
 
 async function verifyGoogleIdToken(idToken: string): Promise<TokenPayload> {
-    const audience = getAllowedGoogleClientIds();
-
-    if (audience.length === 0) {
-        throw new Error('No Google client IDs configured for ID token verification');
-    }
+    const audience = getGoogleClientId();
 
     const ticket = await googleClient.verifyIdToken({
         idToken,
@@ -42,11 +120,38 @@ async function verifyGoogleIdToken(idToken: string): Promise<TokenPayload> {
         throw new Error('Failed to verify Google ID token');
     }
 
+    if (payload.aud !== audience) {
+        throw new Error('Google ID token audience does not match the configured web client ID');
+    }
+
     return payload;
+}
+
+async function exchangeGoogleAuthCodeForIdentity(serverAuthCode: string): Promise<GoogleIdentity> {
+    const oauthClient = createGoogleOAuthClient();
+    const { tokens } = await oauthClient.getToken(serverAuthCode);
+    oauthClient.setCredentials(tokens);
+
+    if (tokens.id_token) {
+        const payload = await verifyGoogleIdToken(tokens.id_token);
+        return mapGoogleTokenPayload(payload);
+    }
+
+    if (tokens.access_token) {
+        const userInfoResponse = await oauthClient.request<GoogleUserInfo>({
+            url: 'https://openidconnect.googleapis.com/v1/userinfo',
+        });
+
+        return mapGoogleUserInfo(userInfoResponse.data);
+    }
+
+    throw new Error('Google auth code exchange did not return an ID token or access token');
 }
 
 @Injectable()
 export class AuthService {
+    private readonly logger = new Logger(AuthService.name);
+
     constructor(
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
@@ -72,13 +177,7 @@ export class AuthService {
         };
     }
 
-    async issueTokensFromGooglePayload(payload: {
-        uid: string;
-        email?: string;
-        name?: string;
-        profileImage?: string;
-        provider?: string;
-    }): Promise<TokenResponseDto> {
+    async issueTokensFromGooglePayload(payload: GoogleIdentity): Promise<TokenResponseDto> {
         if (!payload.email) {
             throw new UnauthorizedException('Google account email is required');
         }
@@ -227,24 +326,33 @@ export class AuthService {
         return this.issueTokensFromGooglePayload(payload);
     }
 
-    private async verifyMobileIdentityToken(idToken: string): Promise<{
-        uid: string;
-        email?: string;
-        name?: string;
-        profileImage?: string;
-        provider?: string;
-    }> {
+    async googleSignInMobileWithAuthCode(serverAuthCode: string): Promise<TokenResponseDto> {
+        if (!serverAuthCode?.trim()) {
+            throw new BadRequestException('serverAuthCode مطلوب');
+        }
+
+        const payload = await this.verifyMobileAuthCode(serverAuthCode);
+        return this.issueTokensFromGooglePayload(payload);
+    }
+
+    private async verifyMobileIdentityToken(idToken: string): Promise<GoogleIdentity> {
         try {
             const payload = await verifyGoogleIdToken(idToken);
-            return {
-                uid: payload.sub,
-                email: payload.email,
-                name: payload.name,
-                profileImage: payload.picture,
-                provider: 'google',
-            };
-        } catch {
+            return mapGoogleTokenPayload(payload);
+        } catch (error) {
+            const message = formatGoogleVerificationError(error);
+            this.logger.warn(`Google ID token verification failed: ${message}`);
             throw new UnauthorizedException('Invalid or expired ID token');
+        }
+    }
+
+    private async verifyMobileAuthCode(serverAuthCode: string): Promise<GoogleIdentity> {
+        try {
+            return await exchangeGoogleAuthCodeForIdentity(serverAuthCode);
+        } catch (error) {
+            const message = formatGoogleVerificationError(error);
+            this.logger.warn(`Google auth code exchange failed: ${message}`);
+            throw new UnauthorizedException('Invalid or expired Google auth code');
         }
     }
 }

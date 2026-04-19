@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateReportDto } from './dto/create-report.dto';
 import { ReportsService } from './reports.service';
@@ -6,6 +6,7 @@ import { UpdateReportStatusDto } from './dto/update-report-status.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { ReportQueryDto } from './dto/report-query.dto';
 
 @ApiTags('Reports')
 @ApiBearerAuth('JWT-access')
@@ -32,8 +33,8 @@ export class ReportsController {
   @Get()
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Get all reports' })
-  findAll() {
-    return this.reportsService.findAll();
+  findAll(@Query() query: ReportQueryDto) {
+    return this.reportsService.findAll(query);
   }
 
   @Get(':id')

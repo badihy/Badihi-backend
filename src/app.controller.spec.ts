@@ -53,6 +53,27 @@ describe('AppController', () => {
     );
   });
 
+  it('renders the google auth test page with the configured client id', async () => {
+    const res = createResponseMock();
+    const previousClientId = process.env.GOOGLE_CLIENT_ID;
+
+    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
+
+    appController.getGoogleAuthTest(res as any);
+
+    expect(res.send).toHaveBeenCalledWith(
+      expect.stringContaining('test-google-client-id'),
+    );
+    expect(res.send).toHaveBeenCalledWith(
+      expect.stringContaining('Google Auth End-to-End Test'),
+    );
+    expect(res.send).toHaveBeenCalledWith(
+      expect.stringContaining('/api/auth/mobile/auth-code'),
+    );
+
+    process.env.GOOGLE_CLIENT_ID = previousClientId;
+  });
+
   it('returns the reset-password page wired to the prefixed API route', async () => {
     const res = createResponseMock();
 

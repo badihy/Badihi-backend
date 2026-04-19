@@ -3,6 +3,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { CategoriesService } from './categories.service';
 import { Category } from './schemas/category.schema';
 import { BunnyService } from '../common/services/bunny.service';
+import { PaginationProvider } from '../common/providers/pagination.provider';
 
 describe('CategoriesService', () => {
   let service: CategoriesService;
@@ -16,6 +17,9 @@ describe('CategoriesService', () => {
     deleteFile: jest.fn(),
     removeFileIfExists: jest.fn(),
   };
+  const paginationProviderMock = {
+    paginate: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -23,6 +27,7 @@ describe('CategoriesService', () => {
         CategoriesService,
         { provide: getModelToken(Category.name), useValue: categoryModelMock },
         { provide: BunnyService, useValue: bunnyServiceMock },
+        { provide: PaginationProvider, useValue: paginationProviderMock },
       ],
     }).compile();
 

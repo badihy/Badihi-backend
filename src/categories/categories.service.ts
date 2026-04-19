@@ -5,12 +5,15 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { Injectable } from '@nestjs/common';
 import { BunnyService } from '../common/services/bunny.service';
+import { PaginationProvider } from '../common/providers/pagination.provider';
+import { CategoryQueryDto } from './dto/category-query.dto';
 
 @Injectable()
 export class CategoriesService {
     constructor(
         @InjectModel(Category.name) private categoryModel: Model<CategoryDocument>,
-        private readonly bunnyService: BunnyService
+        private readonly bunnyService: BunnyService,
+        private readonly paginationProvider: PaginationProvider,
     ) { }
 
     async create(createCategoryDto: CreateCategoryDto, file: Express.Multer.File): Promise<Category> {
@@ -19,8 +22,16 @@ export class CategoriesService {
         return createdCategory.save();;
     }
 
-    async findAll(): Promise<Category[]> {
-        return this.categoryModel.find().populate('parent').exec();
+    async findAll(query: CategoryQueryDto) {
+        return this.paginationProvider.paginate(this.categoryModel, {
+            page: query.page,
+            limit: query.limit,
+            search: query.search,
+            searchIn: ['name', 'description'],
+            relations: ['parent'],
+            sortBy: 'createdAt',
+            sortOrder: 'desc',
+        });
     }
 
     async findOne(id: string): Promise<Category | null> {

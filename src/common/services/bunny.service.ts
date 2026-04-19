@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+    BadRequestException,
+    Injectable,
+    InternalServerErrorException,
+    ServiceUnavailableException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
 import { Logger } from '@nestjs/common';
@@ -52,13 +57,8 @@ export class BunnyService {
     }
 
     async uploadFile(file: Express.Multer.File): Promise<string> {
-        if (!this.apiKey) {
-            throw new Error('مفتاح API الخاص بـ BunnyCDN غير مُكوّن');
-        }
-
-        if (!file || !file.buffer) {
-            throw new Error('الملف المقدم غير صحيح');
-        }
+        this.ensureApiKeyConfigured();
+        this.ensureValidFile(file);
 
         const fileName = Date.now() + '-' + file.originalname;
         const uploadUrl = `${this.baseUrl}/${fileName}`;
@@ -89,27 +89,22 @@ export class BunnyService {
                 (typeof error?.message === 'string' && error.message.toLowerCase().includes('timeout'));
 
             if (error?.code === 'ENOTFOUND' || error?.code === 'ECONNREFUSED') {
-                throw new Error('فشل الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
+                throw new ServiceUnavailableException('فشل الاتصال بالشبكة. يرجى التحقق من اتصال الإنترنت والمحاولة مرة أخرى.');
             } else if (isTimeout) {
-                throw new Error('انتهت مهلة رفع الملف. جرّب مرة أخرى أو استخدم ملفاً أصغر.');
+                throw new ServiceUnavailableException('انتهت مهلة رفع الملف. جرّب مرة أخرى أو استخدم ملفاً أصغر.');
             } else if (error?.response?.status === 401) {
-                throw new Error('مفتاح API الخاص بـ BunnyCDN غير صحيح. يرجى التحقق من الإعدادات.');
+                throw new InternalServerErrorException('مفتاح API الخاص بـ BunnyCDN غير صحيح. يرجى التحقق من الإعدادات.');
             } else if (error?.response?.status === 404) {
-                throw new Error('منطقة التخزين غير موجودة. يرجى التحقق من إعدادات BunnyCDN.');
+                throw new InternalServerErrorException('منطقة التخزين غير موجودة. يرجى التحقق من إعدادات BunnyCDN.');
             } else {
-                throw new Error(`فشل تحميل الملف: ${error?.message || ''}`);
+                throw new InternalServerErrorException(`فشل تحميل الملف: ${error?.message || ''}`);
             }
         }
     }
 
     async uploadVideo(file: Express.Multer.File): Promise<string> {
-        if (!this.apiKey) {
-            throw new Error('مفتاح API الخاص بـ BunnyCDN غير مُكوّن');
-        }
-
-        if (!file || !file.buffer) {
-            throw new Error('الملف المقدم غير صحيح');
-        }
+        this.ensureApiKeyConfigured();
+        this.ensureValidFile(file);
 
         try {
             const uploadUrl = `${this.baseUrl}/${file.originalname}`;
@@ -130,25 +125,21 @@ export class BunnyService {
             this.logger.log(`Video uploaded successfully: ${cdnUrl}`);
             return cdnUrl;
 
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error(`Video upload failed for ${file.originalname}:`, error.message);
-            throw new Error(`فشل تحميل الفيديو على Bunny.net: ${error.message}`);
+            throw new InternalServerErrorException(`فشل تحميل الفيديو على Bunny.net: ${error.message}`);
         }
     }
 
     async uploadMultipleFiles(files: Express.Multer.File[]): Promise<string[]> {
-        if (!this.apiKey) {
-            throw new Error('مفتاح API الخاص بـ BunnyCDN غير مُكوّن');
-        }
+        this.ensureApiKeyConfigured();
 
         if (!files || files.length === 0) {
-            throw new Error('لم يتم تقديم ملفات');
+            throw new BadRequestException('لم يتم تقديم ملفات');
         }
 
         const uploadPromises = files.map(async (file) => {
-            if (!file || !file.buffer) {
-                throw new Error(`ملف غير صحيح: ${file?.originalname || 'غير معروف'}`);
-            }
+            this.ensureValidFile(file, `ملف غير صحيح: ${file?.originalname || 'غير معروف'}`);
 
             const uploadUrl = `${this.baseUrl}/${file.originalname}`;
             try {
@@ -168,9 +159,9 @@ export class BunnyService {
                 this.logger.log(`File uploaded successfully: ${cdnUrl}`);
                 return cdnUrl;
 
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`File upload failed for ${file.originalname}:`, error.message);
-                throw new Error(`فشل تحميل الملف: ${error.message}`);
+                throw new InternalServerErrorException(`فشل تحميل الملف: ${error.message}`);
             }
         });
 
@@ -217,6 +208,18 @@ export class BunnyService {
             await this.deleteFile(fileUrl);
         } catch (error: any) {
             this.logger.warn(`Skipping file cleanup for ${fileUrl}: ${error?.message || error}`);
+        }
+    }
+
+    private ensureApiKeyConfigured() {
+        if (!this.apiKey) {
+            throw new InternalServerErrorException('مفتاح API الخاص بـ BunnyCDN غير مُكوّن');
+        }
+    }
+
+    private ensureValidFile(file?: Express.Multer.File, message = 'الملف المقدم غير صحيح') {
+        if (!file || !file.buffer) {
+            throw new BadRequestException(message);
         }
     }
 

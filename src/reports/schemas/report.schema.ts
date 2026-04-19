@@ -50,3 +50,5 @@ export class Report {
 
 export type ReportDocument = Document & Report;
 export const ReportSchema = SchemaFactory.createForClass(Report);
+ReportSchema.index({ userId: 1 });
+ReportSchema.index({ status: 1, type: 1, createdAt: -1 });

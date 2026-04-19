@@ -7,11 +7,12 @@ loadEnv();
 
 const googleClient = new OAuth2Client();
 
-function getAllowedGoogleClientIds(): string[] {
-  return [process.env.GOOGLE_CLIENT_ID_MOBILE]
-    .filter(Boolean)
-    .map((value) => (typeof value === 'string' ? value.trim() : ''))
-    .filter(Boolean);
+function getExpectedGoogleAudience(): string {
+  const audience = process.env.GOOGLE_CLIENT_ID?.trim();
+  if (!audience) {
+    throw new Error('GOOGLE_CLIENT_ID is not configured');
+  }
+  return audience;
 }
 
 function extractTokenFromText(text: string): string {
@@ -56,11 +57,7 @@ function decodeJwtPayload(token: string): Record<string, unknown> {
 }
 
 async function verifyWithGoogle(token: string): Promise<TokenPayload> {
-  const audience = getAllowedGoogleClientIds();
-
-  if (audience.length === 0) {
-    throw new Error('No Google client IDs configured');
-  }
+  const audience = getExpectedGoogleAudience();
 
   const ticket = await googleClient.verifyIdToken({
     idToken: token,
@@ -70,6 +67,10 @@ async function verifyWithGoogle(token: string): Promise<TokenPayload> {
   const payload = ticket.getPayload();
   if (!payload) {
     throw new Error('Google verification succeeded but returned no payload');
+  }
+
+  if (payload.aud !== audience) {
+    throw new Error('Google token aud does not match GOOGLE_CLIENT_ID');
   }
 
   return payload;

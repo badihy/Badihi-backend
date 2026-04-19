@@ -8,6 +8,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { MobileGoogleSignInDto } from './dto/mobile-google-sign-in.dto';
+import { MobileGoogleAuthCodeDto } from './dto/mobile-google-auth-code.dto';
 
 @Public()
 @ApiTags('Auth')
@@ -53,5 +54,31 @@ export class AuthController {
   })
   async googleSignInMobile(@Body() body: MobileGoogleSignInDto): Promise<TokenResponseDto> {
     return this.authService.googleSignInMobile(body.idToken);
+  }
+
+  @Post('mobile/auth-code')
+  @ApiOperation({ summary: 'Google Sign-In for mobile using server auth code' })
+  @ApiBody({ type: MobileGoogleAuthCodeDto })
+  @ApiOkResponse({
+    description: 'Successfully authenticated after exchanging the mobile server auth code',
+    type: TokenResponseDto,
+  })
+  async googleSignInMobileWithAuthCode(
+    @Body() body: MobileGoogleAuthCodeDto,
+  ): Promise<TokenResponseDto> {
+    return this.authService.googleSignInMobileWithAuthCode(body.serverAuthCode);
+  }
+
+  @Post('mobile/auth-code/test')
+  @ApiOperation({ summary: 'Temporary alias for the mobile server auth code flow' })
+  @ApiBody({ type: MobileGoogleAuthCodeDto })
+  @ApiOkResponse({
+    description: 'Successfully authenticated after exchanging the mobile server auth code',
+    type: TokenResponseDto,
+  })
+  async googleSignInMobileWithAuthCodeTestAlias(
+    @Body() body: MobileGoogleAuthCodeDto,
+  ): Promise<TokenResponseDto> {
+    return this.authService.googleSignInMobileWithAuthCode(body.serverAuthCode);
   }
 }

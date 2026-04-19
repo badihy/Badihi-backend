@@ -17,3 +17,5 @@ export class Category {
 
 export type CategoryDocument = Document & Category;
 export const CategorySchema = SchemaFactory.createForClass(Category);
+CategorySchema.index({ parent: 1 });
+CategorySchema.index({ name: 1 });
