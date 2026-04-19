@@ -5,7 +5,6 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { UserModule } from './user/user.module';
-import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './auth/auth.module';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ServeStaticModule } from '@nestjs/serve-static';
@@ -27,36 +26,38 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/', // This serves files at root, e.g. /.well-known/assetlinks.json
     }),
-   MailerModule.forRootAsync({
-  imports: [ConfigModule],
-  inject: [ConfigService],
-  useFactory: async (configService: ConfigService) => {
-    const host = configService.get<string>('EMAIL_HOST');
-    const port = Number(configService.get<string>('EMAIL_PORT') || '465');
-    const user = configService.get<string>('EMAIL_USERNAME');
-    const pass = configService.get<string>('EMAIL_PASSWORD');
-    const from = configService.get<string>('EMAIL_FROM') || user;
+    MailerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('EMAIL_HOST');
+        const port = Number(configService.get<string>('EMAIL_PORT') || '465');
+        const user = configService.get<string>('EMAIL_USERNAME');
+        const pass = configService.get<string>('EMAIL_PASSWORD');
+        const from = configService.get<string>('EMAIL_FROM') || user;
 
-    if (!host || !user || !pass || !from) {
-      throw new Error('Missing EMAIL_HOST / EMAIL_USERNAME / EMAIL_PASSWORD / EMAIL_FROM');
-    }
+        if (!host || !user || !pass || !from) {
+          throw new Error(
+            'Missing EMAIL_HOST / EMAIL_USERNAME / EMAIL_PASSWORD / EMAIL_FROM',
+          );
+        }
 
-    return {
-      transport: {
-        host,
-        port,
-        secure: port === 465,
-        auth: {
-          user,
-          pass,
-        },
+        return {
+          transport: {
+            host,
+            port,
+            secure: port === 465,
+            auth: {
+              user,
+              pass,
+            },
+          },
+          defaults: {
+            from: `"Badihi" <${from}>`,
+          },
+        };
       },
-      defaults: {
-        from: `"Badihi" <${from}>`,
-      },
-    };
-  },
-}),
+    }),
     DatabaseModule,
     UserModule,
     AuthModule,
@@ -66,12 +67,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ReportsModule,
     CertificateModule,
     BookmarksModule,
-
   ],
   controllers: [AppController],
-  providers: [
-    AppService,
-    { provide: APP_GUARD, useClass: JwtAuthGuard },
-  ],
+  providers: [AppService, { provide: APP_GUARD, useClass: JwtAuthGuard }],
 })
-export class AppModule { }
+export class AppModule {}
