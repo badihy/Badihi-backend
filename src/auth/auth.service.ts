@@ -352,7 +352,7 @@ export class AuthService {
         } catch (error) {
             const message = formatGoogleVerificationError(error);
             this.logger.warn(`Google auth code exchange failed: ${message}`);
-            throw new UnauthorizedException('Invalid or expired Google auth code');
+            throw new NotFoundException('Invalid or expired Google auth code');
         }
     }
 }

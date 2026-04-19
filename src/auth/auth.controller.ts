@@ -5,7 +5,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from '../user/dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ApiBearerAuth, ApiBody, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { TokenResponseDto } from './dto/token-response.dto';
 import { MobileGoogleSignInDto } from './dto/mobile-google-sign-in.dto';
 import { MobileGoogleAuthCodeDto } from './dto/mobile-google-auth-code.dto';
@@ -63,6 +63,9 @@ export class AuthController {
     description: 'Successfully authenticated after exchanging the mobile server auth code',
     type: TokenResponseDto,
   })
+  @ApiNotFoundResponse({
+    description: 'The Google auth code is invalid, expired, or cannot be exchanged',
+  })
   async googleSignInMobileWithAuthCode(
     @Body() body: MobileGoogleAuthCodeDto,
   ): Promise<TokenResponseDto> {
@@ -75,6 +78,9 @@ export class AuthController {
   @ApiOkResponse({
     description: 'Successfully authenticated after exchanging the mobile server auth code',
     type: TokenResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'The Google auth code is invalid, expired, or cannot be exchanged',
   })
   async googleSignInMobileWithAuthCodeTestAlias(
     @Body() body: MobileGoogleAuthCodeDto,
