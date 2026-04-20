@@ -14,7 +14,8 @@ export enum PopulateLevel {
 export class CourseQueryDto {
   @ApiPropertyOptional({
     enum: PopulateLevel,
-    description: 'Level of population: none, chapters, lessons, slides, quizzes, full',
+    description:
+      'Level of population: none, chapters, lessons, slides, quizzes, full',
     example: PopulateLevel.CHAPTERS,
   })
   @IsOptional()

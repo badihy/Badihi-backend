@@ -7,9 +7,15 @@ import { JwtModule } from '@nestjs/jwt';
 import { EmailService } from '../common/services/email.service';
 import { AuthModule } from '../auth/auth.module';
 import { BunnyService } from '../common/services/bunny.service';
-import { Enrollment, EnrollmentSchema } from '../courses/schemas/enrollment.schema';
+import {
+  Enrollment,
+  EnrollmentSchema,
+} from '../courses/schemas/enrollment.schema';
 import { Report, ReportSchema } from '../reports/schemas/report.schema';
-import { Certificate, CertificateSchema } from '../certificate/schemas/certificate.schema';
+import {
+  Certificate,
+  CertificateSchema,
+} from '../certificate/schemas/certificate.schema';
 import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
 
 @Module({
@@ -28,4 +34,4 @@ import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
   providers: [UserService, EmailService, BunnyService],
   exports: [UserService],
 })
-export class UserModule { }
+export class UserModule {}

@@ -2,16 +2,12 @@ import { forwardRef, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
-import { FirebaseModule } from '../firebase/firebase.module';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { JwtAccessStrategy } from './strategies/jwt-access.strategy';
-import { GoogleStrategy } from './strategies/google.strategey';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { EmailService } from '../common/services/email.service';
 import { PassportModule } from '@nestjs/passport';
-import { FirebaseGuard } from './guards/firebase.guard';
-import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @Module({
@@ -26,20 +22,16 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
       }),
       inject: [ConfigService],
     }),
-    FirebaseModule,
-    forwardRef(() => UserModule)
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
     JwtAccessStrategy,
     RefreshTokenStrategy,
-    GoogleStrategy,
     EmailService,
-    FirebaseGuard,
-    GoogleOAuthGuard,
     JwtAuthGuard,
   ],
   exports: [AuthService, JwtAuthGuard],
 })
-export class AuthModule { }
+export class AuthModule {}

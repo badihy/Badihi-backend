@@ -1,18 +1,16 @@
 export const getResetPasswordEmailHtml = (name: string, link: string) => `
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعادة تعيين كلمة المرور - بديهي</title>
+    <title>Reset Your Password - Badihi</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap');
-        
         body {
             margin: 0;
             padding: 0;
             background-color: #ffffff;
-            font-family: 'Tajawal', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #333333;
         }
 
@@ -25,7 +23,7 @@ export const getResetPasswordEmailHtml = (name: string, link: string) => `
         .header {
             text-align: left;
             display: flex;
-            justify-content: flex-end;
+            justify-content: flex-start;
             align-items: center;
             margin-bottom: 30px;
         }
@@ -77,7 +75,7 @@ export const getResetPasswordEmailHtml = (name: string, link: string) => `
         }
 
         .content {
-            text-align: right;
+            text-align: left;
         }
 
         h1 {
@@ -116,13 +114,13 @@ export const getResetPasswordEmailHtml = (name: string, link: string) => `
             border-top: 1px solid #eeeeee;
             font-size: 12px;
             color: #888;
-            text-align: right;
+            text-align: left;
         }
 
         .footer-logo {
             display: flex;
             align-items: center;
-            justify-content: flex-end;
+            justify-content: flex-start;
             margin-top: 20px;
             margin-bottom: 10px;
         }
@@ -130,34 +128,21 @@ export const getResetPasswordEmailHtml = (name: string, link: string) => `
         .social-icons {
             margin-top: 10px;
             text-align: left;
-            display: flex; 
+            display: flex;
             gap: 10px;
-            justify-content: flex-end;
-            flex-direction: row-reverse;
-        }
-        
-        .social-icons img {
-            width: 20px;
-            height: 20px;
-            filter: opacity(0.5);
-        }
-
-        *[dir="rtl"] {
-            text-align: right;
+            justify-content: flex-start;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Header Logo -->
         <div class="header">
-            <div class="logo-text">بديـهـي</div>
             <div style="width: 30px; height: 30px; margin-right: 5px;">
                 <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
             </div>
+            <div class="logo-text">Badihi</div>
         </div>
 
-        <!-- Hero Image Placeholder -->
         <div class="hero-image">
             <div class="shape-group">
                 <div class="shape-1"></div>
@@ -165,42 +150,38 @@ export const getResetPasswordEmailHtml = (name: string, link: string) => `
             </div>
         </div>
 
-        <!-- Content -->
         <div class="content">
-            <h1>مرحباً ${name}،</h1>
+            <h1>Hello ${name},</h1>
             
-            <p>لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك في بديهي.</p>
+            <p>We received a request to reset the password for your Badihi account.</p>
             
-            <p>يمكنك تغيير كلمة المرور من خلال الضغط على الزر أدناه. الرابط صالح لمدة ساعة واحدة فقط.</p>
+            <p>You can change your password by clicking the button below. This link is valid for one hour only.</p>
             
-            <div class="btn-container" style="text-align: left;">
-                <a href="${link}" class="btn">إعادة تعيين كلمة المرور</a>
+            <div class="btn-container">
+                <a href="${link}" class="btn">Reset password</a>
             </div>
             
             <p style="margin-top: 30px; font-size: 14px; color: #777;">
-                إذا لم تقم بطلب إعادة تعيين كلمة المرور، يمكنك تجاهل هذا البريد الإلكتروني بأمان.
+                If you did not request a password reset, you can safely ignore this email.
             </p>
         </div>
 
-        <!-- Footer -->
         <div class="footer">
-            <p>إذا كانت لديك أي استفسارات، لا تتردد في التواصل معنا.</p>
-            <p>مع تمنياتنا لك بتجربة آمنة.</p>
+            <p>If you have any questions, feel free to contact us.</p>
+            <p>We wish you a safe and smooth experience.</p>
             
             <div class="footer-logo">
-                <strong>فريق بديهي</strong>
+                <strong>The Badihi Team</strong>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                <div class="logo-text" style="font-size: 16px; display: flex; align-items: center;">
-                    بديـهـي
+                <div class="logo-text" style="font-size: 16px; display: flex; align-items: center; margin-left: 0;">
                     <div style="width: 20px; height: 20px; margin-right: 5px;">
                         <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
                     </div>
+                    Badihi
                 </div>
-                <div class="social-icons">
-                    <!-- Icons would go here -->
-                </div>
+                <div class="social-icons"></div>
            </div>
         </div>
     </div>

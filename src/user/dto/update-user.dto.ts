@@ -25,7 +25,7 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional({
     example: 'https://cdn.example.com/profiles/user-123.jpg',
-    format: 'binary'
+    format: 'binary',
   })
   @IsOptional()
   @IsString()

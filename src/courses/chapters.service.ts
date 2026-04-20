@@ -21,19 +21,24 @@ export class ChaptersService {
    * Create a new chapter and link it to its parent course
    */
   async createChapter(createChapterDto: CreateChapterDto): Promise<Chapter> {
-    const course = await this.courseModel.findById(createChapterDto.course).exec();
+    const course = await this.courseModel
+      .findById(createChapterDto.course)
+      .exec();
     if (!course) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${createChapterDto.course} غير موجودة`);
+      throw new NotFoundException(
+        `Course with id ${createChapterDto.course} was not found`,
+      );
     }
 
     const chapter = new this.chapterModel(createChapterDto);
     const savedChapter = await chapter.save();
 
     // Push chapter reference into the course
-    await this.courseModel.findByIdAndUpdate(
-      createChapterDto.course,
-      { $push: { chapters: savedChapter._id } },
-    ).exec();
+    await this.courseModel
+      .findByIdAndUpdate(createChapterDto.course, {
+        $push: { chapters: savedChapter._id },
+      })
+      .exec();
 
     return savedChapter;
   }
@@ -44,7 +49,7 @@ export class ChaptersService {
   async findAllChapters(courseId: string): Promise<Chapter[]> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${courseId} غير موجودة`);
+      throw new NotFoundException(`Course with id ${courseId} was not found`);
     }
 
     return this.chapterModel
@@ -66,7 +71,7 @@ export class ChaptersService {
       .exec();
 
     if (!chapter) {
-      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
+      throw new NotFoundException(`Chapter with id ${id} was not found`);
     }
 
     return chapter;
@@ -75,13 +80,16 @@ export class ChaptersService {
   /**
    * Update a chapter by ID
    */
-  async updateChapter(id: string, updateData: UpdateChapterDto): Promise<Chapter> {
+  async updateChapter(
+    id: string,
+    updateData: UpdateChapterDto,
+  ): Promise<Chapter> {
     const updatedChapter = await this.chapterModel
       .findByIdAndUpdate(id, updateData, { new: true })
       .exec();
 
     if (!updatedChapter) {
-      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
+      throw new NotFoundException(`Chapter with id ${id} was not found`);
     }
 
     return updatedChapter;
@@ -93,7 +101,7 @@ export class ChaptersService {
   async removeChapter(id: string): Promise<Chapter> {
     const chapter = await this.chapterModel.findById(id).exec();
     if (!chapter) {
-      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
+      throw new NotFoundException(`Chapter with id ${id} was not found`);
     }
 
     // Cascade delete lessons belonging to this chapter
@@ -107,10 +115,9 @@ export class ChaptersService {
     }
 
     // Remove chapter reference from the parent course
-    await this.courseModel.findByIdAndUpdate(
-      chapter.course,
-      { $pull: { chapters: chapter._id } },
-    ).exec();
+    await this.courseModel
+      .findByIdAndUpdate(chapter.course, { $pull: { chapters: chapter._id } })
+      .exec();
 
     return (await this.chapterModel.findByIdAndDelete(id).exec())!;
   }

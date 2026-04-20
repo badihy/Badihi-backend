@@ -1,18 +1,94 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getModelToken } from '@nestjs/mongoose';
 import { CategoriesService } from './categories.service';
+import { Category } from './schemas/category.schema';
+import { BunnyService } from '../common/services/bunny.service';
+import { PaginationProvider } from '../common/providers/pagination.provider';
 
 describe('CategoriesService', () => {
   let service: CategoriesService;
+  const categoryModelMock = {
+    findById: jest.fn(),
+    findByIdAndUpdate: jest.fn(),
+    findByIdAndDelete: jest.fn(),
+  };
+  const bunnyServiceMock = {
+    uploadFile: jest.fn(),
+    deleteFile: jest.fn(),
+    removeFileIfExists: jest.fn(),
+  };
+  const paginationProviderMock = {
+    paginate: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [CategoriesService],
+      providers: [
+        CategoriesService,
+        { provide: getModelToken(Category.name), useValue: categoryModelMock },
+        { provide: BunnyService, useValue: bunnyServiceMock },
+        { provide: PaginationProvider, useValue: paginationProviderMock },
+      ],
     }).compile();
 
     service = module.get<CategoriesService>(CategoriesService);
+    jest.clearAllMocks();
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('keeps the current image when updating without a new file', async () => {
+    const existingCategory = { _id: 'cat-1', image: 'old-image-url' };
+    const updatedCategory = {
+      _id: 'cat-1',
+      image: 'old-image-url',
+      name: 'Updated',
+    };
+
+    categoryModelMock.findById.mockReturnValue({
+      exec: jest.fn().mockResolvedValue(existingCategory),
+    });
+    categoryModelMock.findByIdAndUpdate.mockReturnValue({
+      exec: jest.fn().mockResolvedValue(updatedCategory),
+    });
+
+    await service.update('cat-1', { name: 'Updated' }, undefined as any);
+
+    expect(categoryModelMock.findByIdAndUpdate).toHaveBeenCalledWith(
+      'cat-1',
+      { name: 'Updated' },
+      { new: true },
+    );
+    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalled();
+  });
+
+  it('deletes the previous image after uploading a replacement', async () => {
+    const existingCategory = { _id: 'cat-1', image: 'old-image-url' };
+    const updatedCategory = {
+      _id: 'cat-1',
+      image: 'new-image-url',
+      name: 'Updated',
+    };
+    const file = { originalname: 'cat.png' };
+
+    categoryModelMock.findById.mockReturnValue({
+      exec: jest.fn().mockResolvedValue(existingCategory),
+    });
+    categoryModelMock.findByIdAndUpdate.mockReturnValue({
+      exec: jest.fn().mockResolvedValue(updatedCategory),
+    });
+    bunnyServiceMock.uploadFile.mockResolvedValue('new-image-url');
+
+    await service.update('cat-1', { name: 'Updated' }, file as any);
+
+    expect(categoryModelMock.findByIdAndUpdate).toHaveBeenCalledWith(
+      'cat-1',
+      { name: 'Updated', image: 'new-image-url' },
+      { new: true },
+    );
+    expect(bunnyServiceMock.removeFileIfExists).toHaveBeenCalledWith(
+      'old-image-url',
+    );
+    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalledWith(
+      'new-image-url',
+    );
   });
 });

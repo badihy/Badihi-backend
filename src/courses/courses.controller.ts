@@ -1,54 +1,181 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFiles, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseInterceptors,
+  UploadedFiles,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { CourseQueryDto, PopulateLevel } from './dto/course-query.dto';
-import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiOperation,
+  ApiTags,
+  ApiQuery,
+} from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/enums/user-role.enum';
 
 @ApiTags('Courses')
 @ApiBearerAuth('JWT-access')
 @Controller('courses')
 export class CoursesController {
-  constructor(private readonly coursesService: CoursesService) { }
+  constructor(private readonly coursesService: CoursesService) {}
 
   // ─── Course Endpoints ────────────────────────────────────────────────────────
 
   @Post()
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'coverImage', maxCount: 1 },
-    { name: 'thumbnailImage', maxCount: 1 },
-  ]))
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'coverImage', maxCount: 1 },
+      { name: 'thumbnailImage', maxCount: 1 },
+    ]),
+  )
   @ApiOperation({ summary: 'Create a new course' })
   @ApiConsumes('multipart/form-data')
   create(
     @Body() createCourseDto: CreateCourseDto,
-    @UploadedFiles() files: { coverImage: Express.Multer.File[], thumbnailImage: Express.Multer.File[] },
+    @UploadedFiles()
+    files: {
+      coverImage: Express.Multer.File[];
+      thumbnailImage: Express.Multer.File[];
+    },
   ) {
     return this.coursesService.create(createCourseDto, files);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all courses with full population' })
-  @ApiQuery({ name: 'category', type: String, required: false, description: 'Filter by category ID' })
+  @ApiQuery({
+    name: 'category',
+    type: String,
+    required: false,
+    description: 'Filter by category ID',
+  })
   async findAll(@Query('category') categoryId?: string, @Req() req?: any) {
     const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
-    return await this.coursesService.findAll(PopulateLevel.FULL, true, categoryId, userId);
+    return await this.coursesService.findAll(
+      PopulateLevel.FULL,
+      true,
+      categoryId,
+      userId,
+    );
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'cover', maxCount: 1 },
+      { name: 'thumbnail', maxCount: 1 },
+    ]),
+  )
+  @ApiOperation({ summary: 'Update a course' })
+  @ApiConsumes('multipart/form-data')
+  async update(
+    @Param('id') id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+    @UploadedFiles()
+    files?: {
+      cover?: Express.Multer.File[];
+      thumbnail?: Express.Multer.File[];
+    },
+  ) {
+    return this.coursesService.update(id, updateCourseDto, files);
+  }
+
+  @Delete(':id')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Delete a course' })
+  remove(@Param('id') id: string) {
+    return this.coursesService.remove(id);
+  }
+
+  @Get('enrolled')
+  @ApiOperation({
+    summary:
+      'Get all courses enrolled by the user with pagination, search, and filtering',
+  })
+  @ApiQuery({
+    name: 'page',
+    type: Number,
+    required: false,
+    description: 'Page number for pagination',
+  })
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    required: false,
+    description: 'Number of items per page',
+  })
+  @ApiQuery({
+    name: 'search',
+    type: String,
+    required: false,
+    description: 'Search term for course titles',
+  })
+  @ApiQuery({
+    name: 'filter',
+    type: String,
+    required: false,
+    description: 'Filter criteria (e.g., category)',
+  })
+  async findEnrolledCourses(
+    @Req() req: any,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+    @Query('search') search?: string,
+    @Query('filter') filter?: string,
+  ) {
+    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    return await this.coursesService.findEnrolledCourses(userId, {
+      page,
+      limit,
+      search,
+      filter,
+    });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a course by id with flexible population' })
-  @ApiQuery({ name: 'populate', enum: PopulateLevel, required: false, description: 'Level of nested population' })
-  @ApiQuery({ name: 'includeCategory', type: Boolean, required: false, description: 'Include category information' })
+  @ApiQuery({
+    name: 'populate',
+    enum: PopulateLevel,
+    required: false,
+    description: 'Level of nested population',
+  })
+  @ApiQuery({
+    name: 'includeCategory',
+    type: Boolean,
+    required: false,
+    description: 'Include category information',
+  })
   async findOne(
     @Param('id') id: string,
     @Query() query: CourseQueryDto,
     @Req() req?: any,
   ) {
     const populateLevel = query.populate || PopulateLevel.FULL;
-    const includeCategory = query.includeCategory !== undefined ? query.includeCategory : true;
+    const includeCategory =
+      query.includeCategory !== undefined ? query.includeCategory : true;
     const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
-    return await this.coursesService.findOne(id, populateLevel, includeCategory, userId);
+    return await this.coursesService.findOne(
+      id,
+      populateLevel,
+      includeCategory,
+      userId,
+    );
   }
 
   @Get(':id/chapters')
@@ -76,30 +203,11 @@ export class CoursesController {
   }
 
   @Get(':id/full')
-  @ApiOperation({ summary: 'Get a course with everything populated (chapters, lessons, slides, quizzes)' })
+  @ApiOperation({
+    summary:
+      'Get a course with everything populated (chapters, lessons, slides, quizzes)',
+  })
   async findOneFull(@Param('id') id: string) {
     return await this.coursesService.findOneFull(id);
   }
-
-  @Patch(':id')
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'cover', maxCount: 1 },
-    { name: 'thumbnail', maxCount: 1 },
-  ]))
-  @ApiOperation({ summary: 'Update a course' })
-  @ApiConsumes('multipart/form-data')
-  async update(
-    @Param('id') id: string,
-    @Body() updateCourseDto: UpdateCourseDto,
-    @UploadedFiles() files?: { cover?: Express.Multer.File[], thumbnail?: Express.Multer.File[] },
-  ) {
-    return this.coursesService.update(id, updateCourseDto, files);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: 'Delete a course' })
-  remove(@Param('id') id: string) {
-    return this.coursesService.remove(id);
-  }
-
 }

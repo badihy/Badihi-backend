@@ -10,10 +10,10 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongooseModule.forFeature([
       { name: 'Slide', schema: SlideSchema },
       { name: 'Lesson', schema: LessonSchema },
-    ])
+    ]),
   ],
   controllers: [SlidesController],
   providers: [SlidesService],
-  exports: [MongooseModule] // Export MongooseModule for seeding scripts
+  exports: [MongooseModule], // Export MongooseModule for seeding scripts
 })
-export class SlidesModule { }
+export class SlidesModule {}

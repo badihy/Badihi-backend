@@ -7,194 +7,209 @@ import { Chapter, ChapterDocument } from '../courses/schemas/chapter.schema';
 import { Lesson, LessonDocument } from '../courses/schemas/lesson.schema';
 import { Quiz, QuizDocument } from '../courses/schemas/quiz.schema';
 import { Slide, SlideDocument } from '../slides/schemas/slide.schema';
-import { Category, CategoryDocument } from '../categories/schemas/category.schema';
+import {
+  Category,
+  CategoryDocument,
+} from '../categories/schemas/category.schema';
 import { SlideType } from '../slides/types/slide-types.enum';
 import { CourseLevel } from '../courses/types/course-level.enum';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
-  const courseModel  = app.get<Model<CourseDocument>>(getModelToken('Course'));
-  const chapterModel = app.get<Model<ChapterDocument>>(getModelToken('Chapter'));
-  const lessonModel  = app.get<Model<LessonDocument>>(getModelToken('Lesson'));
-  const quizModel    = app.get<Model<QuizDocument>>(getModelToken('Quiz'));
-  const slideModel   = app.get<Model<SlideDocument>>(getModelToken('Slide'));
-  const categoryModel = app.get<Model<CategoryDocument>>(getModelToken('Category'));
+  const courseModel = app.get<Model<CourseDocument>>(getModelToken('Course'));
+  const chapterModel = app.get<Model<ChapterDocument>>(
+    getModelToken('Chapter'),
+  );
+  const lessonModel = app.get<Model<LessonDocument>>(getModelToken('Lesson'));
+  const quizModel = app.get<Model<QuizDocument>>(getModelToken('Quiz'));
+  const slideModel = app.get<Model<SlideDocument>>(getModelToken('Slide'));
+  const categoryModel = app.get<Model<CategoryDocument>>(
+    getModelToken('Category'),
+  );
 
-  console.log('🌱 بدء زرع بيانات الدورات التدريبية...');
+  console.log('🌱 Starting course seed...');
 
   try {
-    // ─── مسح البيانات القديمة ───────────────────────────────────────────────
-    console.log('🗑️  مسح البيانات الموجودة...');
+    console.log('🗑️  Clearing existing course data...');
     await courseModel.deleteMany({});
     await chapterModel.deleteMany({});
     await lessonModel.deleteMany({});
     await quizModel.deleteMany({});
     await slideModel.deleteMany({});
 
-    // ─── الفئات ─────────────────────────────────────────────────────────────
-    console.log('📁 إنشاء الفئات...');
+    console.log('📁 Creating categories...');
 
-    let branchingCategory = await categoryModel.findOne({ name: 'البرمجة' });
-    if (!branchingCategory) {
-      branchingCategory = await categoryModel.create({
-        name: 'البرمجة',
-        description: 'تعلّم لغات البرمجة والمفاهيم الأساسية لبناء التطبيقات',
+    let programmingCategory = await categoryModel.findOne({
+      name: 'Programming',
+    });
+    if (!programmingCategory) {
+      programmingCategory = await categoryModel.create({
+        name: 'Programming',
+        description:
+          'Learn programming languages and the core concepts required to build applications.',
         image: 'https://example.com/categories/programming.jpg',
       });
     }
 
-    let webDevCategory = await categoryModel.findOne({ name: 'تطوير الويب' });
+    let webDevCategory = await categoryModel.findOne({
+      name: 'Web Development',
+    });
     if (!webDevCategory) {
       webDevCategory = await categoryModel.create({
-        name: 'تطوير الويب',
-        description: 'بناء تطبيقات ويب حديثة وتفاعلية باستخدام أحدث التقنيات',
+        name: 'Web Development',
+        description:
+          'Build modern and interactive web applications using current technologies.',
         image: 'https://example.com/categories/webdev.jpg',
       });
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // الدورة الأولى: أساسيات جافاسكريبت
-    // ═══════════════════════════════════════════════════════════════════════════
-    console.log('📚 إنشاء الدورة الأولى: أساسيات جافاسكريبت...');
+    console.log('📚 Creating course 1: JavaScript Essentials...');
 
     const jsCourse = await courseModel.create({
-      name: 'أساسيات جافاسكريبت',
+      name: 'JavaScript Essentials',
       description:
-        'تعلّم أساسيات لغة البرمجة جافاسكريبت من الصفر حتى الاحتراف، مع تطبيقات عملية تُمكّنك من بناء صفحات ويب تفاعلية.',
+        'Learn JavaScript fundamentals from scratch through practical examples that help you build interactive web pages.',
       shortDescription:
-        'أتقن جافاسكريبت من الصفر وابنِ أول تطبيقاتك التفاعلية على الويب',
+        'Master JavaScript basics and build your first interactive web experiences.',
       price: 149,
-      category: branchingCategory._id,
+      category: programmingCategory._id,
       willLearn: [
-        'المتغيرات وأنواع البيانات',
-        'الدوال والنطاق (Scope)',
-        'المصفوفات والكائنات',
-        'هياكل التحكم (if / for / while)',
-        'التعامل مع DOM وإضافة التفاعلية',
-        'مفاهيم البرمجة غير المتزامنة (Async/Await)',
+        'Variables and data types',
+        'Functions and scope',
+        'Arrays and objects',
+        'Control flow with if, for, and while',
+        'Working with the DOM and interactivity',
+        'Async programming with async and await',
       ],
       requirements: [
-        'مهارات أساسية في استخدام الحاسوب',
-        'محرر نصوص (يُنصح بـ VS Code)',
-        'متصفح ويب حديث',
+        'Basic computer skills',
+        'A code editor such as VS Code',
+        'A modern web browser',
       ],
       targetAudience: [
-        'المبتدئون في البرمجة',
-        'الطلاب الجامعيون',
-        'المطورون الراغبون في تعلّم الواجهة الأمامية',
-        'المحترفون الراغبون في التحوّل المهني',
+        'Programming beginners',
+        'University students',
+        'Developers interested in frontend fundamentals',
+        'Professionals exploring a career shift into software development',
       ],
       level: CourseLevel.BEGINNER,
-      estimationTime: '10 ساعات',
+      estimationTime: '10 hours',
       coverImage: 'https://example.com/courses/js-cover.jpg',
       thumbnailImage: 'https://example.com/courses/js-thumb.jpg',
     });
 
-    // ── الفصل الأول: مقدمة في جافاسكريبت ──────────────────────────────────
-    console.log('  📖 إنشاء الفصل الأول: مقدمة في جافاسكريبت...');
+    console.log('  📖 Creating chapter 1: Introduction to JavaScript...');
     const jsChapter1 = await chapterModel.create({
-      title: 'مقدمة في جافاسكريبت',
-      subtitle: 'ابدأ رحلتك مع أشهر لغة برمجة على الويب',
-      description: 'تعرّف على جافاسكريبت، تاريخها، وكيفية كتابة أول سطر كود',
+      title: 'Introduction to JavaScript',
+      subtitle:
+        'Start your journey with one of the most popular languages on the web',
+      description:
+        'Discover what JavaScript is, where it came from, and how to write your first line of code.',
       orderIndex: 1,
       course: jsCourse._id,
     });
 
-    // ── الدرس الأول: المتغيرات وأنواع البيانات ─────────────────────────────
-    console.log('    📝 إنشاء الدرس الأول: المتغيرات وأنواع البيانات...');
+    console.log('    📝 Creating lesson 1: Variables and Data Types...');
     const jsLesson1 = await lessonModel.create({
-      title: 'المتغيرات وأنواع البيانات',
-      description: 'تعلّم كيفية تعريف المتغيرات واستخدام أنواع البيانات المختلفة في جافاسكريبت',
+      title: 'Variables and Data Types',
+      description:
+        'Learn how to declare variables and use common JavaScript data types.',
       orderIndex: 1,
       chapter: jsChapter1._id,
       estimatedDuration: 20,
     });
 
-    // الشرائح
     const jsSlide1 = await slideModel.create({
-      title: 'ما هو المتغير؟',
+      title: 'What is a variable?',
       type: SlideType.TEXT,
       textContent:
-        'المتغير هو حاوية لتخزين قيمة بيانات. في جافاسكريبت يمكنك تعريف المتغيرات باستخدام الكلمات المفتاحية: var أو let أو const.',
+        'A variable is a container used to store data. In JavaScript, variables can be declared with var, let, or const.',
       orderIndex: 1,
       lesson: jsLesson1._id,
     });
 
     const jsSlide2 = await slideModel.create({
-      title: 'أنواع البيانات السبعة',
+      title: 'The seven primitive data types',
       type: SlideType.GOLDEN_INFO,
       textContent:
-        'تحتوي جافاسكريبت على سبعة أنواع بيانات أساسية هي: String (نص) – Number (رقم) – Boolean (صح/خطأ) – Undefined – Null – Symbol – BigInt.',
+        'JavaScript has seven primitive data types: String, Number, Boolean, Undefined, Null, Symbol, and BigInt.',
       orderIndex: 2,
       lesson: jsLesson1._id,
     });
 
     const jsSlide3 = await slideModel.create({
-      title: 'اقتباس ملهم',
+      title: 'Inspiring quote',
       type: SlideType.QUOTE,
       textContent:
-        '"أي شخص يمكنه تعلّم البرمجة. البرمجة تُعلّمك كيف تُفكّر." – ستيف جوبز',
+        '"Everybody in this country should learn how to program a computer because it teaches you how to think." - Steve Jobs',
       orderIndex: 3,
       lesson: jsLesson1._id,
     });
 
     const jsSlide4 = await slideModel.create({
-      title: 'سؤال تدريبي',
+      title: 'Practice question',
       type: SlideType.QUESTION,
-      textContent: 'أي كلمة مفتاحية تُستخدم لتعريف ثابت لا يمكن تغيير قيمته؟',
+      textContent: 'Which keyword is used to declare a constant value?',
       questions: ['var', 'let', 'const', 'static'],
       answer: 'const',
-      questionHint: 'فكّر في المتغير الذي لا يمكن إعادة تعيينه بعد التعريف',
+      questionHint:
+        'Think about the keyword used for values that should not be reassigned.',
       orderIndex: 4,
       lesson: jsLesson1._id,
     });
 
-    jsLesson1.slides = [jsSlide1._id, jsSlide2._id, jsSlide3._id, jsSlide4._id] as any;
+    jsLesson1.slides = [
+      jsSlide1._id,
+      jsSlide2._id,
+      jsSlide3._id,
+      jsSlide4._id,
+    ] as any;
     await jsLesson1.save();
 
-    // ── الدرس الثاني: الدوال ───────────────────────────────────────────────
-    console.log('    📝 إنشاء الدرس الثاني: الدوال...');
+    console.log('    📝 Creating lesson 2: Functions...');
     const jsLesson2 = await lessonModel.create({
-      title: 'الدوال في جافاسكريبت',
-      description: 'تعلّم كيفية إنشاء الدوال واستدعائها وفهم مفهوم النطاق (Scope)',
+      title: 'Functions in JavaScript',
+      description:
+        'Learn how to define and call functions and how scope works.',
       orderIndex: 2,
       chapter: jsChapter1._id,
       estimatedDuration: 25,
     });
 
     const jsSlide5 = await slideModel.create({
-      title: 'تعريف الدالة',
+      title: 'Defining a function',
       type: SlideType.TEXT,
       textContent:
-        'الدالة هي كتلة كود قابلة لإعادة الاستخدام. يمكن تعريفها بطريقتين:\n' +
-        '1. function greet(name) { return `مرحباً، ${name}!`; }\n' +
-        '2. const greet = (name) => `مرحباً، ${name}!`;',
+        'A function is a reusable block of code. It can be written in more than one way:\n' +
+        '1. function greet(name) { return `Hello, ${name}!`; }\n' +
+        '2. const greet = (name) => `Hello, ${name}!`;',
       orderIndex: 1,
       lesson: jsLesson2._id,
     });
 
     const jsSlide6 = await slideModel.create({
-      title: 'نصيحة ذهبية عن الدوال',
+      title: 'A golden rule for functions',
       type: SlideType.GOLDEN_INFO,
       textContent:
-        'اكتب دوالاً صغيرة ومُختصة: كل دالة يجب أن تؤدي مهمة واحدة فقط (Single Responsibility Principle).',
+        'Write small focused functions. Each function should handle one clear responsibility.',
       orderIndex: 2,
       lesson: jsLesson2._id,
     });
 
     const jsSlide7 = await slideModel.create({
-      title: 'سؤال تدريبي: الدوال',
+      title: 'Practice question: functions',
       type: SlideType.QUESTION,
-      textContent: 'ما الفرق الرئيسي بين function declaration وfunction expression؟',
+      textContent:
+        'What is the main difference between a function declaration and a function expression?',
       questions: [
-        'لا يوجد فرق',
-        'الـ declaration تُرفع (Hoisted) بينما الـ expression لا',
-        'الـ expression أسرع في الأداء',
-        'الـ declaration لا يمكنها قبول معاملات',
+        'There is no difference',
+        'Declarations are hoisted while expressions are not',
+        'Expressions are always faster',
+        'Declarations cannot receive arguments',
       ],
-      answer: 'الـ declaration تُرفع (Hoisted) بينما الـ expression لا',
-      questionHint: 'فكّر في مفهوم الرفع (Hoisting) في جافاسكريبت',
+      answer: 'Declarations are hoisted while expressions are not',
+      questionHint: 'Think about hoisting in JavaScript.',
       orderIndex: 3,
       lesson: jsLesson2._id,
     });
@@ -205,47 +220,48 @@ async function bootstrap() {
     jsChapter1.lessons = [jsLesson1._id, jsLesson2._id] as any;
     await jsChapter1.save();
 
-    // ── الفصل الثاني: اختبار تقييمي ────────────────────────────────────────
-    console.log('  📖 إنشاء الفصل الثاني: الاختبار التقييمي...');
+    console.log('  📖 Creating chapter 2: Knowledge Check...');
     const jsChapter2 = await chapterModel.create({
-      title: 'تقييم الفصل الأول',
-      subtitle: 'اختبر مدى فهمك لأساسيات جافاسكريبت',
-      description: 'اختبار شامل يغطي المتغيرات وأنواع البيانات والدوال',
+      title: 'Chapter 1 Quiz',
+      subtitle: 'Test your understanding of JavaScript fundamentals',
+      description:
+        'A short quiz covering variables, data types, and functions.',
       orderIndex: 2,
       course: jsCourse._id,
     });
 
     const jsQuiz = await quizModel.create({
-      title: 'اختبار أساسيات جافاسكريبت',
-      description: 'اختبر فهمك للمتغيرات وأنواع البيانات والدوال في جافاسكريبت',
+      title: 'JavaScript Fundamentals Quiz',
+      description:
+        'Assess your understanding of variables, data types, and functions in JavaScript.',
       chapter: jsChapter2._id,
       questions: [
         {
-          question: 'أي من التالي ليس نوع بيانات في جافاسكريبت؟',
+          question: 'Which of the following is not a JavaScript data type?',
           options: ['String', 'Number', 'Character', 'Boolean'],
           correctAnswer: 2,
           explanation:
-            'جافاسكريبت لا تحتوي على نوع "Character". النصوص الفردية تُعالج كـ String.',
+            'JavaScript does not have a dedicated Character type. Single characters are stored as strings.',
           orderIndex: 1,
         },
         {
-          question: 'ما الناتج من تنفيذ: typeof null في جافاسكريبت؟',
+          question: 'What is the result of typeof null in JavaScript?',
           options: ['"null"', '"undefined"', '"object"', '"boolean"'],
           correctAnswer: 2,
           explanation:
-            'هذه ثغرة تاريخية في جافاسكريبت؛ typeof null يُعيد "object" رغم أن null ليس كائناً.',
+            'This is a historical quirk in JavaScript. typeof null returns "object" even though null is not an object.',
           orderIndex: 2,
         },
         {
-          question: 'أي كلمة مفتاحية تُنشئ متغيراً محدوداً بنطاق الكتلة (Block Scope)؟',
+          question: 'Which keyword creates a block-scoped variable?',
           options: ['var', 'let', 'function', 'global'],
           correctAnswer: 1,
           explanation:
-            'let وconst لهما نطاق الكتلة، بينما var لها نطاق الدالة أو العام.',
+            'let and const are block-scoped, while var is function-scoped or globally scoped.',
           orderIndex: 3,
         },
         {
-          question: 'ما صيغة الدالة السهمية (Arrow Function) الصحيحة؟',
+          question: 'Which arrow function syntax is correct?',
           options: [
             'function(x) => x * 2',
             'const double = (x) => x * 2;',
@@ -253,7 +269,8 @@ async function bootstrap() {
             '(x) -> x * 2',
           ],
           correctAnswer: 1,
-          explanation: 'الدالة السهمية تُكتب بصيغة: const fn = (params) => expression;',
+          explanation:
+            'Arrow functions use syntax such as const fn = (params) => expression;',
           orderIndex: 4,
         },
       ],
@@ -267,232 +284,239 @@ async function bootstrap() {
     jsCourse.chapters = [jsChapter1._id, jsChapter2._id] as any;
     await jsCourse.save();
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // الدورة الثانية: أساسيات React.js
-    // ═══════════════════════════════════════════════════════════════════════════
-    console.log('📚 إنشاء الدورة الثانية: أساسيات React.js...');
+    console.log('📚 Creating course 2: React.js Fundamentals...');
 
     const reactCourse = await courseModel.create({
-      name: 'أساسيات React.js',
+      name: 'React.js Fundamentals',
       description:
-        'أتقن مكتبة React.js لبناء واجهات مستخدم ديناميكية وتفاعلية. ستتعلم في هذه الدورة المكوّنات والـ Hooks وإدارة الحالة وأفضل الممارسات.',
+        'Build a solid foundation in React.js by learning components, hooks, state management, and practical best practices.',
       shortDescription:
-        'ابنِ تطبيقات ويب تفاعلية وديناميكية باستخدام مكتبة React.js الأكثر شيوعاً',
+        'Create dynamic web interfaces with one of the most popular frontend libraries.',
       price: 249,
       category: webDevCategory._id,
       willLearn: [
-        'مفهوم المكوّنات (Components)',
-        'صيغة JSX وكيفية استخدامها',
-        'إدارة الحالة (State) باستخدام useState',
-        'التعامل مع الأحداث والـ Props',
-        'الـ Hooks الأساسية: useEffect وuseContext',
-        'التوجيه باستخدام React Router',
+        'The component model',
+        'How JSX works',
+        'Managing state with useState',
+        'Handling events and props',
+        'Core hooks such as useEffect and useContext',
+        'Client-side routing with React Router',
       ],
       requirements: [
-        'إتقان أساسيات جافاسكريبت (ES6+)',
-        'معرفة بـ HTML وCSS',
-        'تثبيت Node.js على الجهاز',
+        'Comfort with JavaScript fundamentals (ES6+)',
+        'Basic HTML and CSS knowledge',
+        'Node.js installed on your machine',
       ],
       targetAudience: [
-        'مطوّرو الواجهة الأمامية',
-        'مطوّرو الويب المتكاملون',
-        'مطوّرو جافاسكريبت الراغبون في تعلّم React',
-        'مصمّمو UI/UX الراغبون في تعلّم التطوير',
+        'Frontend developers',
+        'Full-stack web developers',
+        'JavaScript developers learning React',
+        'Designers interested in implementation',
       ],
       level: CourseLevel.INTERMEDIATE,
-      estimationTime: '15 ساعة',
+      estimationTime: '15 hours',
       coverImage: 'https://example.com/courses/react-cover.jpg',
       thumbnailImage: 'https://example.com/courses/react-thumb.jpg',
     });
 
-    // ── الفصل الأول: البداية مع React ──────────────────────────────────────
-    console.log('  📖 إنشاء الفصل الأول: البداية مع React...');
+    console.log('  📖 Creating chapter 1: Getting Started with React...');
     const reactChapter1 = await chapterModel.create({
-      title: 'البداية مع React',
-      subtitle: 'افهم فلسفة React وكيف تختلف عن الـ Vanilla JS',
-      description: 'مقدمة إلى React، إعداد بيئة العمل، وإنشاء أول مشروع',
+      title: 'Getting Started with React',
+      subtitle:
+        'Understand the React mindset and how it differs from vanilla JavaScript',
+      description:
+        'An introduction to React, local setup, and your first project structure.',
       orderIndex: 1,
       course: reactCourse._id,
     });
 
-    // ── الدرس الأول: ما هو React؟ ─────────────────────────────────────────
-    console.log('    📝 إنشاء الدرس الأول: ما هو React؟...');
+    console.log('    📝 Creating lesson 1: What is React?');
     const reactLesson1 = await lessonModel.create({
-      title: 'ما هو React وما الذي يميّزه؟',
-      description: 'تعرّف على React وسبب شيوعه الواسع في مجتمع تطوير الويب',
+      title: 'What is React and why is it useful?',
+      description:
+        'Understand what React is and why it became so popular in frontend development.',
       orderIndex: 1,
       chapter: reactChapter1._id,
       estimatedDuration: 15,
     });
 
     const reactSlide1 = await slideModel.create({
-      title: 'نظرة عامة على React',
+      title: 'React overview',
       type: SlideType.TEXT,
       textContent:
-        'React هي مكتبة جافاسكريبت مفتوحة المصدر طوّرتها شركة Meta (فيسبوك سابقاً) لبناء واجهات المستخدم، ولا سيما تطبيقات الصفحة الواحدة (SPA).',
+        'React is an open-source JavaScript library created by Meta for building user interfaces, especially single-page applications.',
       orderIndex: 1,
       lesson: reactLesson1._id,
     });
 
     const reactSlide2 = await slideModel.create({
-      title: 'لماذا React؟',
+      title: 'Why React?',
       type: SlideType.GOLDEN_INFO,
       textContent:
-        'React تعتمد على بنية المكوّنات (Component-Based) والـ Virtual DOM، مما يجعل تحديثات واجهة المستخدم فعّالة جداً وسهلة الصيانة.',
+        'React uses a component-based model and the Virtual DOM to keep interfaces maintainable and efficient.',
       orderIndex: 2,
       lesson: reactLesson1._id,
     });
 
     const reactSlide3 = await slideModel.create({
-      title: 'اقتباس من مجتمع React',
+      title: 'A quote from the React community',
       type: SlideType.QUOTE,
-      textContent:
-        '"تعلّم React مرة واحدة، ثم اكتب التطبيقات في أي مكان." – فريق React',
+      textContent: '"Learn React once, write anywhere." - React Team',
       orderIndex: 3,
       lesson: reactLesson1._id,
     });
 
     const reactSlide4 = await slideModel.create({
-      title: 'سؤال: ما الـ Virtual DOM؟',
+      title: 'Question: what is the Virtual DOM?',
       type: SlideType.QUESTION,
-      textContent:
-        'أي من التعريفات التالية يصف الـ Virtual DOM بشكل صحيح؟',
+      textContent: 'Which option best describes the Virtual DOM?',
       questions: [
-        'هو DOM حقيقي يُنشئه المتصفح',
-        'هو نسخة افتراضية من شجرة DOM تُدار بواسطة React في الذاكرة',
-        'هو إطار عمل منفصل عن React',
-        'هو قاعدة بيانات لحفظ حالة التطبيق',
+        'A real browser DOM created by the browser',
+        'A lightweight in-memory representation of the DOM managed by React',
+        'A separate framework unrelated to React',
+        'A database used to store application state',
       ],
-      answer: 'هو نسخة افتراضية من شجرة DOM تُدار بواسطة React في الذاكرة',
-      questionHint: 'فكّر في كيفية تحسين React لأداء التحديثات',
+      answer:
+        'A lightweight in-memory representation of the DOM managed by React',
+      questionHint: 'Think about how React optimizes updates.',
       orderIndex: 4,
       lesson: reactLesson1._id,
     });
 
-    reactLesson1.slides = [reactSlide1._id, reactSlide2._id, reactSlide3._id, reactSlide4._id] as any;
+    reactLesson1.slides = [
+      reactSlide1._id,
+      reactSlide2._id,
+      reactSlide3._id,
+      reactSlide4._id,
+    ] as any;
     await reactLesson1.save();
 
-    // ── الدرس الثاني: المكوّنات والـ JSX ──────────────────────────────────
-    console.log('    📝 إنشاء الدرس الثاني: المكوّنات والـ JSX...');
+    console.log('    📝 Creating lesson 2: Components and JSX...');
     const reactLesson2 = await lessonModel.create({
-      title: 'المكوّنات وصيغة JSX',
-      description: 'تعلّم كيفية إنشاء المكوّنات وكتابة JSX بشكل صحيح',
+      title: 'Components and JSX',
+      description: 'Learn how to create components and write JSX correctly.',
       orderIndex: 2,
       chapter: reactChapter1._id,
       estimatedDuration: 30,
     });
 
     const reactSlide5 = await slideModel.create({
-      title: 'المكوّنة الأولى',
+      title: 'Your first component',
       type: SlideType.TEXT,
       textContent:
-        'المكوّن في React عبارة عن دالة تُعيد JSX:\n' +
+        'In React, a component is often a function that returns JSX:\n' +
         'function WelcomeCard() {\n' +
-        '  return <div className="card">مرحباً بك في React!</div>;\n' +
+        '  return <div className="card">Welcome to React!</div>;\n' +
         '}',
       orderIndex: 1,
       lesson: reactLesson2._id,
     });
 
     const reactSlide6 = await slideModel.create({
-      title: 'مثال مصوّر: مكوّن بطاقة',
+      title: 'Visual example: profile card component',
       type: SlideType.TEXT,
-      textContent: 'انظر إلى مثال مكوّن بطاقة مستخدم يستقبل اسم المستخدم وصورته عبر الـ Props.',
+      textContent:
+        'Imagine a card component that receives a user name and avatar through props.',
       imageUrl: 'https://example.com/images/react-component-diagram.png',
       orderIndex: 2,
       lesson: reactLesson2._id,
     });
 
     const reactSlide7 = await slideModel.create({
-      title: 'سؤال: JSX',
+      title: 'Question: JSX',
       type: SlideType.QUESTION,
-      textContent: 'ما الذي يُميّز JSX عن HTML العادي؟',
+      textContent: 'What makes JSX different from plain HTML?',
       questions: [
-        'JSX يستخدم class بدلاً من className',
-        'JSX يسمح بتضمين تعبيرات جافاسكريبت داخل {}',
-        'JSX لا يدعم الـ CSS',
-        'لا يوجد فرق بينهما',
+        'JSX uses class instead of className',
+        'JSX allows embedding JavaScript expressions inside {}',
+        'JSX does not support CSS',
+        'There is no difference',
       ],
-      answer: 'JSX يسمح بتضمين تعبيرات جافاسكريبت داخل {}',
-      questionHint: 'فكّر في الأقواس المنحنية {} ودورها في JSX',
+      answer: 'JSX allows embedding JavaScript expressions inside {}',
+      questionHint: 'Think about curly braces in JSX.',
       orderIndex: 3,
       lesson: reactLesson2._id,
     });
 
-    reactLesson2.slides = [reactSlide5._id, reactSlide6._id, reactSlide7._id] as any;
+    reactLesson2.slides = [
+      reactSlide5._id,
+      reactSlide6._id,
+      reactSlide7._id,
+    ] as any;
     await reactLesson2.save();
 
     reactChapter1.lessons = [reactLesson1._id, reactLesson2._id] as any;
     await reactChapter1.save();
 
-    // ── الفصل الثاني: اختبار React ─────────────────────────────────────────
-    console.log('  📖 إنشاء الفصل الثاني: اختبار أساسيات React...');
+    console.log('  📖 Creating chapter 2: React Fundamentals Quiz...');
     const reactChapter2 = await chapterModel.create({
-      title: 'اختبار أساسيات React',
-      subtitle: 'تحقّق من فهمك قبل الانتقال للمحتوى المتقدم',
-      description: 'اختبار يشمل المكوّنات وJSX والـ Virtual DOM',
+      title: 'React Fundamentals Quiz',
+      subtitle:
+        'Check your understanding before moving to more advanced topics',
+      description: 'A quiz covering components, JSX, and the Virtual DOM.',
       orderIndex: 2,
       course: reactCourse._id,
     });
 
     const reactQuiz = await quizModel.create({
-      title: 'اختبار أساسيات React.js',
-      description: 'اختبر معرفتك بمفاهيم React الأساسية: المكوّنات وJSX والـ Virtual DOM',
+      title: 'React.js Fundamentals Quiz',
+      description:
+        'Test your understanding of core React concepts such as components, JSX, and the Virtual DOM.',
       chapter: reactChapter2._id,
       questions: [
         {
-          question: 'ما هو الـ Virtual DOM؟',
+          question: 'What is the Virtual DOM?',
           options: [
-            'نسخة مُبسَّطة من DOM المتصفح تُخزَّن في الذاكرة لتحسين الأداء',
-            'واجهة برمجية لإنشاء قواعد بيانات',
-            'أداة لإدارة الـ CSS في React',
-            'مكوّن خاص مدمج في React',
+            'A lightweight in-memory copy of the browser DOM used to optimize updates',
+            'An API for creating databases',
+            'A tool for managing CSS in React',
+            'A special built-in React component',
           ],
           correctAnswer: 0,
           explanation:
-            'الـ Virtual DOM هو تمثيل خفيف الوزن لشجرة DOM الفعلية. React يقارن بين نسختين منه ليُحدّث فقط ما تغيّر.',
+            'The Virtual DOM is a lightweight representation of the real DOM. React compares versions of it to update only what changed.',
           orderIndex: 1,
         },
         {
-          question: 'ما الخاصية الصحيحة لتعيين الكلاس CSS في JSX؟',
+          question: 'Which attribute is used to assign CSS classes in JSX?',
           options: ['class', 'className', 'cssClass', 'styleClass'],
           correctAnswer: 1,
           explanation:
-            'في JSX نستخدم className بدلاً من class لتجنب التعارض مع الكلمة المحجوزة class في جافاسكريبت.',
+            'In JSX, className is used instead of class to avoid conflicting with the reserved JavaScript keyword class.',
           orderIndex: 2,
         },
         {
-          question: 'أي Hook يُستخدم لإدارة حالة المكوّن في React؟',
+          question: 'Which hook is used to manage component state in React?',
           options: ['useEffect', 'useState', 'useContext', 'useReducer'],
           correctAnswer: 1,
           explanation:
-            'useState هو الـ Hook الأساسي لإضافة الحالة (State) للمكوّنات الوظيفية.',
+            'useState is the core hook used to add state to functional components.',
           orderIndex: 3,
         },
         {
-          question: 'ما الـ Prop في React؟',
+          question: 'What is a prop in React?',
           options: [
-            'متغير داخلي خاص بالمكوّن لا يمكن تمريره للخارج',
-            'بيانات تُمرَّر من المكوّن الأب إلى المكوّن الابن',
-            'طريقة لاستدعاء قاعدة البيانات',
-            'خطاف (Hook) مدمج في React',
+            'A private internal variable that cannot be passed out',
+            'Data passed from a parent component to a child component',
+            'A method used to query the database',
+            'A built-in React hook',
           ],
           correctAnswer: 1,
           explanation:
-            'الـ Props (اختصار Properties) هي البيانات التي يُرسلها المكوّن الأب إلى المكوّنات الأبناء وهي للقراءة فقط.',
+            'Props, short for properties, are read-only values passed from parent components to child components.',
           orderIndex: 4,
         },
         {
-          question: 'ما هو الناتج الصحيح لمكوّن React؟',
+          question: 'What should a React component return?',
           options: [
-            'سلسلة JSON',
-            'عنصر JSX أو null',
-            'كائن JavaScript عادي',
-            'ملف HTML منفصل',
+            'A JSON string',
+            'A JSX element or null',
+            'Any plain JavaScript object',
+            'A separate HTML file',
           ],
           correctAnswer: 1,
           explanation:
-            'المكوّن الوظيفي في React يجب أن يُعيد عنصر JSX أو null. لا يمكنه إعادة أنواع بيانات اعتباطية.',
+            'A functional React component should return a JSX element or null.',
           orderIndex: 5,
         },
       ],
@@ -506,17 +530,15 @@ async function bootstrap() {
     reactCourse.chapters = [reactChapter1._id, reactChapter2._id] as any;
     await reactCourse.save();
 
-    // ─── ملخص ───────────────────────────────────────────────────────────────
-    console.log('\n✅ اكتملت عملية زرع البيانات بنجاح!\n');
-    console.log('📊 الإحصائيات:');
-    console.log(`   - الدورات    : ${await courseModel.countDocuments()}`);
-    console.log(`   - الفصول     : ${await chapterModel.countDocuments()}`);
-    console.log(`   - الدروس     : ${await lessonModel.countDocuments()}`);
-    console.log(`   - الشرائح    : ${await slideModel.countDocuments()}`);
-    console.log(`   - الاختبارات : ${await quizModel.countDocuments()}`);
-
+    console.log('\n✅ Course seed completed successfully.\n');
+    console.log('📊 Summary:');
+    console.log(`   - Courses   : ${await courseModel.countDocuments()}`);
+    console.log(`   - Chapters  : ${await chapterModel.countDocuments()}`);
+    console.log(`   - Lessons   : ${await lessonModel.countDocuments()}`);
+    console.log(`   - Slides    : ${await slideModel.countDocuments()}`);
+    console.log(`   - Quizzes   : ${await quizModel.countDocuments()}`);
   } catch (error) {
-    console.error('❌ خطأ أثناء زرع البيانات:', error);
+    console.error('❌ Course seed failed:', error);
     throw error;
   } finally {
     await app.close();

@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
@@ -9,10 +15,12 @@ import { UserService } from '../user/user.service';
 @Injectable()
 export class EnrollmentsService {
   constructor(
-    @InjectModel(Enrollment.name) private enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Enrollment.name)
+    private enrollmentModel: Model<EnrollmentDocument>,
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
     @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
-    @Inject(forwardRef(() => UserService)) private readonly userService: UserService,
+    @Inject(forwardRef(() => UserService))
+    private readonly userService: UserService,
   ) {}
 
   /**
@@ -21,13 +29,17 @@ export class EnrollmentsService {
   async enroll(courseId: string, userId: string): Promise<Enrollment> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${courseId} غير موجودة`);
+      throw new NotFoundException(`Course with id ${courseId} was not found`);
     }
 
     // Check if already enrolled
-    const existingEnrollment = await this.enrollmentModel.findOne({ course: courseId, user: userId }).exec();
+    const existingEnrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .exec();
     if (existingEnrollment) {
-      throw new BadRequestException('المستخدم مسجل بالفعل في هذه الدورة');
+      throw new BadRequestException(
+        'The user is already enrolled in this course',
+      );
     }
 
     const enrollment = new this.enrollmentModel({
@@ -54,15 +66,19 @@ export class EnrollmentsService {
    * Get user enrollment for a course
    */
   async getEnrollment(courseId: string, userId: string): Promise<Enrollment> {
-    const enrollment = await this.enrollmentModel.findOne({ course: courseId, user: userId }).exec();
+    const enrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .exec();
     if (!enrollment) {
-      throw new NotFoundException('تسجيل الدورة غير موجود للمستخدم المذكور');
+      throw new NotFoundException(
+        'Course enrollment was not found for the specified user',
+      );
     }
-    
+
     // Update lastAccessedAt
     enrollment.lastAccessedAt = new Date();
     await enrollment.save();
-    
+
     return enrollment;
   }
 
@@ -75,13 +91,15 @@ export class EnrollmentsService {
     rating: number,
     comment?: string,
   ): Promise<Enrollment> {
-    const enrollment = await this.enrollmentModel.findOne({ course: courseId, user: userId }).exec();
+    const enrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .exec();
     if (!enrollment) {
-      throw new NotFoundException('المستخدم غير مسجل في هذه الدورة');
+      throw new NotFoundException('The user is not enrolled in this course');
     }
 
     if (rating < 1 || rating > 5) {
-      throw new BadRequestException('التقييم يجب أن يكون رقماً بين 1 و 5');
+      throw new BadRequestException('Rating must be a number between 1 and 5');
     }
 
     enrollment.rating = rating;
@@ -129,14 +147,22 @@ export class EnrollmentsService {
   /**
    * Mark a lesson as completed to update progress
    */
-  async markLessonCompleted(courseId: string, userId: string, lessonId: string): Promise<Enrollment> {
+  async markLessonCompleted(
+    courseId: string,
+    userId: string,
+    lessonId: string,
+  ): Promise<Enrollment> {
     return this.updateEnrollmentProgress(courseId, userId, { lessonId });
   }
 
   /**
    * Mark a quiz as completed to update progress
    */
-  async markQuizCompleted(courseId: string, userId: string, quizId: string): Promise<Enrollment> {
+  async markQuizCompleted(
+    courseId: string,
+    userId: string,
+    quizId: string,
+  ): Promise<Enrollment> {
     return this.updateEnrollmentProgress(courseId, userId, { quizId });
   }
 
@@ -144,31 +170,41 @@ export class EnrollmentsService {
    * Central method to update progress
    */
   private async updateEnrollmentProgress(
-    courseId: string, 
-    userId: string, 
-    completedItems: { lessonId?: string, quizId?: string }
+    courseId: string,
+    userId: string,
+    completedItems: { lessonId?: string; quizId?: string },
   ): Promise<Enrollment> {
-    const enrollment = await this.enrollmentModel.findOne({ course: courseId, user: userId }).exec();
+    const enrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .exec();
     if (!enrollment) {
-      throw new NotFoundException('التسجيل غير موجود');
+      throw new NotFoundException('Enrollment not found');
     }
 
     let isUpdated = false;
 
-    if (completedItems.lessonId && !enrollment.completedLessons.includes(completedItems.lessonId as any)) {
+    if (
+      completedItems.lessonId &&
+      !enrollment.completedLessons.includes(completedItems.lessonId as any)
+    ) {
       enrollment.completedLessons.push(completedItems.lessonId as any);
       isUpdated = true;
     }
 
-    if (completedItems.quizId && !enrollment.completedQuizzes.includes(completedItems.quizId as any)) {
+    if (
+      completedItems.quizId &&
+      !enrollment.completedQuizzes.includes(completedItems.quizId as any)
+    ) {
       enrollment.completedQuizzes.push(completedItems.quizId as any);
       isUpdated = true;
     }
 
     if (isUpdated) {
       // Calculate new progress
-      const chapters = await this.chapterModel.find({ course: courseId }).exec();
-      
+      const chapters = await this.chapterModel
+        .find({ course: courseId })
+        .exec();
+
       let totalItems = 0;
       for (const chapter of chapters) {
         // add total lessons in the chapter
@@ -182,18 +218,22 @@ export class EnrollmentsService {
       }
 
       if (totalItems > 0) {
-        const completedCount = enrollment.completedLessons.length + enrollment.completedQuizzes.length;
-        const progressPercentage = Math.round((completedCount / totalItems) * 100);
+        const completedCount =
+          enrollment.completedLessons.length +
+          enrollment.completedQuizzes.length;
+        const progressPercentage = Math.round(
+          (completedCount / totalItems) * 100,
+        );
         enrollment.progress = Math.min(progressPercentage, 100);
-        
+
         if (enrollment.progress === 100) {
           enrollment.isCompleted = true;
         }
       }
-      
+
       return enrollment.save();
     }
-    
+
     return enrollment;
   }
 }

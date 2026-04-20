@@ -1,10 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsMongoId, IsNotEmpty } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
-/** جسم طلبات التقدم (درس/اختبار) — معرّف المستخدم */
+/** Progress request bodies are empty because the user is derived from the access token. */
 export class MarkEnrollmentUserDto {
-  @ApiProperty({ example: '60d5ecb8b392d663c0f22a11', description: 'معرّف المستخدم (Mongo ObjectId)' })
-  @IsMongoId()
-  @IsNotEmpty()
-  userId: string;
+  @ApiPropertyOptional({
+    type: String,
+    deprecated: true,
+    description:
+      'This field is no longer used. The user is determined from the access token.',
+  })
+  readonly userId?: string;
 }

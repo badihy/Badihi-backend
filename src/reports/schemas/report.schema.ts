@@ -1,3 +1,4 @@
+import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import mongoose, { Document } from 'mongoose';
 
@@ -17,8 +18,13 @@ export enum ReportStatus {
 
 @Schema({ timestamps: true })
 export class Report {
+  @ApiPropertyOptional({
+    type: String,
+    example: '65f2d8f2f11b2a2ef2a63f10',
+    description: 'User id associated with the report',
+  })
   @Prop({ required: false, type: mongoose.Schema.Types.ObjectId, ref: 'User' })
-  userId?: mongoose.Types.ObjectId;
+  userId?: string;
 
   @Prop({ required: false })
   name?: string;
@@ -44,3 +50,5 @@ export class Report {
 
 export type ReportDocument = Document & Report;
 export const ReportSchema = SchemaFactory.createForClass(Report);
+ReportSchema.index({ userId: 1 });
+ReportSchema.index({ status: 1, type: 1, createdAt: -1 });
