@@ -21,6 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { TokenResponseDto } from './dto/token-response.dto';
+import { MobileGoogleSignInDto } from './dto/mobile-google-sign-in.dto';
 
 @Public()
 @ApiTags('Auth')
