@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
   forwardRef,
   Inject,
@@ -37,6 +38,8 @@ import { UserRole } from '../auth/enums/user-role.enum';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Enrollment.name)
@@ -82,11 +85,19 @@ export class UserService {
     const verificationToken = await this.generateVerificationToken(
       user._id.toString(),
     );
-    await this.emailService.sendWelcomeEmail(
-      user.email,
-      user.fullName,
-      verificationToken,
-    );
+
+    try {
+      await this.emailService.sendWelcomeEmail(
+        user.email,
+        user.fullName,
+        verificationToken,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.warn(
+        `Welcome email failed for user ${user.email}: ${message}`,
+      );
+    }
 
     // Auto-login: issue access & refresh tokens right after registration
     const tokens = await this.authService.getTokens(user._id, user.email);

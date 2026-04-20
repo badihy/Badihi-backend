@@ -7,12 +7,18 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Bookmark, BookmarkDocument } from './schemas/bookmark.schema';
 import { Course, CourseDocument } from '../courses/schemas/course.schema';
+import {
+  Enrollment,
+  EnrollmentDocument,
+} from '../courses/schemas/enrollment.schema';
 
 @Injectable()
 export class BookmarksService {
   constructor(
     @InjectModel(Bookmark.name) private bookmarkModel: Model<BookmarkDocument>,
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
+    @InjectModel(Enrollment.name)
+    private enrollmentModel: Model<EnrollmentDocument>,
   ) {}
 
   async add(userId: string, courseId: string): Promise<Bookmark> {
@@ -54,11 +60,21 @@ export class BookmarksService {
       .lean()
       .exec();
 
+    const courseIds = items
+      .map((bookmark: any) => bookmark?.course?._id)
+      .filter(Boolean);
+    const enrollmentsCountMap = await this.getEnrollmentsCountMap(courseIds);
+
     return items.map((b: any) => ({
       _id: b._id,
       createdAt: b.createdAt,
       updatedAt: b.updatedAt,
-      course: b.course,
+      course: b.course
+        ? {
+            ...b.course,
+            enrollmentsCount: enrollmentsCountMap[b.course._id.toString()] ?? 0,
+          }
+        : b.course,
     }));
   }
 
@@ -70,5 +86,32 @@ export class BookmarksService {
       .findOne({ user: userId, course: courseId })
       .exec();
     return { bookmarked: !!found };
+  }
+
+  private async getEnrollmentsCountMap(courseIds: any[]) {
+    if (!courseIds.length) {
+      return {} as Record<string, number>;
+    }
+
+    const aggregation = await this.enrollmentModel.aggregate([
+      {
+        $match: {
+          course: { $in: courseIds },
+        },
+      },
+      {
+        $group: {
+          _id: '$course',
+          enrollmentsCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const counts: Record<string, number> = {};
+    for (const item of aggregation) {
+      counts[item._id.toString()] = item.enrollmentsCount ?? 0;
+    }
+
+    return counts;
   }
 }
