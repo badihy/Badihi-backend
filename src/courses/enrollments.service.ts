@@ -29,7 +29,9 @@ export class EnrollmentsService {
   async enroll(courseId: string, userId: string): Promise<Enrollment> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`Course with id ${courseId} was not found`);
+      throw new NotFoundException(
+        `الدورة التدريبية بالمعرف ${courseId} غير موجودة`,
+      );
     }
 
     // Check if already enrolled
@@ -37,9 +39,7 @@ export class EnrollmentsService {
       .findOne({ course: courseId, user: userId })
       .exec();
     if (existingEnrollment) {
-      throw new BadRequestException(
-        'The user is already enrolled in this course',
-      );
+      throw new BadRequestException('المستخدم مسجل بالفعل في هذه الدورة');
     }
 
     const enrollment = new this.enrollmentModel({
@@ -70,9 +70,7 @@ export class EnrollmentsService {
       .findOne({ course: courseId, user: userId })
       .exec();
     if (!enrollment) {
-      throw new NotFoundException(
-        'Course enrollment was not found for the specified user',
-      );
+      throw new NotFoundException('تسجيل الدورة غير موجود للمستخدم المذكور');
     }
 
     // Update lastAccessedAt
@@ -95,11 +93,11 @@ export class EnrollmentsService {
       .findOne({ course: courseId, user: userId })
       .exec();
     if (!enrollment) {
-      throw new NotFoundException('The user is not enrolled in this course');
+      throw new NotFoundException('المستخدم غير مسجل في هذه الدورة');
     }
 
     if (rating < 1 || rating > 5) {
-      throw new BadRequestException('Rating must be a number between 1 and 5');
+      throw new BadRequestException('التقييم يجب أن يكون رقماً بين 1 و 5');
     }
 
     enrollment.rating = rating;
@@ -178,7 +176,7 @@ export class EnrollmentsService {
       .findOne({ course: courseId, user: userId })
       .exec();
     if (!enrollment) {
-      throw new NotFoundException('Enrollment not found');
+      throw new NotFoundException('التسجيل غير موجود');
     }
 
     let isUpdated = false;

@@ -24,7 +24,7 @@ export class CourseMediaService {
     if (coverImage?.[0]) {
       coverImageUrl = await this.uploadCourseImage(
         coverImage[0],
-        'cover image',
+        'صورة الغلاف',
       );
     }
 
@@ -32,7 +32,7 @@ export class CourseMediaService {
       try {
         thumbnailImageUrl = await this.uploadCourseImage(
           thumbnailImage[0],
-          'thumbnail image',
+          'الصورة المصغرة',
         );
       } catch (error) {
         if (coverImageUrl && coverImageUrl !== createCourseDto.coverImage) {
@@ -58,7 +58,7 @@ export class CourseMediaService {
     if (files?.cover?.[0]) {
       updateData.coverImage = await this.uploadCourseImage(
         files.cover[0],
-        'cover image',
+        'صورة الغلاف',
       );
       if (
         existingCourse.coverImage &&
@@ -73,7 +73,7 @@ export class CourseMediaService {
       try {
         updateData.thumbnailImage = await this.uploadCourseImage(
           files.thumbnail[0],
-          'thumbnail image',
+          'الصورة المصغرة',
         );
       } catch (error) {
         if (
@@ -112,18 +112,18 @@ export class CourseMediaService {
     try {
       return await this.bunnyService.uploadFile(file);
     } catch (error: any) {
-      const message = error?.message || 'Failed to upload file';
+      const message = error?.message || 'تعذر رفع الملف';
       if (
         typeof message === 'string' &&
-        (message.includes('file') ||
-          message.includes('timeout') ||
-          message.includes('connection') ||
+        (message.includes('الملف') ||
+          message.includes('مهلة') ||
+          message.includes('الاتصال') ||
           message.includes('Bunny'))
       ) {
-        throw new BadRequestException(`Failed to upload ${label}: ${message}`);
+        throw new BadRequestException(`فشل تحميل ${label}: ${message}`);
       }
 
-      throw new InternalServerErrorException(`Failed to upload ${label}`);
+      throw new InternalServerErrorException(`فشل تحميل ${label}`);
     }
   }
 

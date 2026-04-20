@@ -18,14 +18,16 @@ export class BookmarksService {
   async add(userId: string, courseId: string): Promise<Bookmark> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`Course with id ${courseId} was not found`);
+      throw new NotFoundException(
+        `الدورة التدريبية بالمعرف ${courseId} غير موجودة`,
+      );
     }
 
     const existing = await this.bookmarkModel
       .findOne({ user: userId, course: courseId })
       .exec();
     if (existing) {
-      throw new BadRequestException('The course is already bookmarked');
+      throw new BadRequestException('الدورة موجودة بالفعل في المفضلة');
     }
 
     const bookmark = new this.bookmarkModel({ user: userId, course: courseId });
@@ -37,7 +39,7 @@ export class BookmarksService {
       .deleteOne({ user: userId, course: courseId })
       .exec();
     if (result.deletedCount === 0) {
-      throw new NotFoundException('Bookmark not found');
+      throw new NotFoundException('الإشارة المرجعية غير موجودة');
     }
   }
 

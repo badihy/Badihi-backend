@@ -101,7 +101,7 @@ export class CoursesService {
 
     const course = await query.exec();
     if (!course) {
-      throw new NotFoundException(`Course with id ${id} was not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     // Get stats for this single course
@@ -174,7 +174,7 @@ export class CoursesService {
     // Get existing course to check for old images
     const existingCourse = await this.courseModel.findById(id).exec();
     if (!existingCourse) {
-      throw new NotFoundException(`Course with id ${id} was not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     const updateData = await this.courseMediaService.prepareUpdateMedia(
@@ -187,7 +187,7 @@ export class CoursesService {
       .findByIdAndUpdate(id, updateData, { new: true })
       .exec();
     if (!updatedCourse) {
-      throw new NotFoundException(`Course with id ${id} was not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
     return updatedCourse;
   }
@@ -195,7 +195,7 @@ export class CoursesService {
   async remove(id: string): Promise<Course> {
     const courseToDelete = await this.courseModel.findById(id).exec();
     if (!courseToDelete) {
-      throw new NotFoundException(`Course with id ${id} was not found`);
+      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
     }
 
     await this.courseMediaService.cleanupCourseMedia(courseToDelete);

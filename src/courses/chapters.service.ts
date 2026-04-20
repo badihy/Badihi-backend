@@ -26,7 +26,7 @@ export class ChaptersService {
       .exec();
     if (!course) {
       throw new NotFoundException(
-        `Course with id ${createChapterDto.course} was not found`,
+        `الدورة التدريبية بالمعرف ${createChapterDto.course} غير موجودة`,
       );
     }
 
@@ -49,7 +49,9 @@ export class ChaptersService {
   async findAllChapters(courseId: string): Promise<Chapter[]> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`Course with id ${courseId} was not found`);
+      throw new NotFoundException(
+        `الدورة التدريبية بالمعرف ${courseId} غير موجودة`,
+      );
     }
 
     return this.chapterModel
@@ -71,7 +73,7 @@ export class ChaptersService {
       .exec();
 
     if (!chapter) {
-      throw new NotFoundException(`Chapter with id ${id} was not found`);
+      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
     }
 
     return chapter;
@@ -89,7 +91,7 @@ export class ChaptersService {
       .exec();
 
     if (!updatedChapter) {
-      throw new NotFoundException(`Chapter with id ${id} was not found`);
+      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
     }
 
     return updatedChapter;
@@ -101,7 +103,7 @@ export class ChaptersService {
   async removeChapter(id: string): Promise<Chapter> {
     const chapter = await this.chapterModel.findById(id).exec();
     if (!chapter) {
-      throw new NotFoundException(`Chapter with id ${id} was not found`);
+      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
     }
 
     // Cascade delete lessons belonging to this chapter

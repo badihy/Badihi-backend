@@ -25,14 +25,14 @@ export class LessonsService {
       .exec();
     if (!chapter) {
       throw new NotFoundException(
-        `Chapter with id ${createLessonDto.chapter} was not found`,
+        `الفصل بالمعرف ${createLessonDto.chapter} غير موجود`,
       );
     }
 
     // A chapter that already has a quiz should not accept lessons
     if (chapter.quiz) {
       throw new BadRequestException(
-        'A lesson cannot be added to a chapter that already has a quiz. A chapter can contain lessons or a quiz, but not both.',
+        'لا يمكن إضافة درس لفصل يحتوي على اختبار. يمكن للفصل احتواء دروس أو اختبار فقط.',
       );
     }
 
@@ -55,7 +55,7 @@ export class LessonsService {
   async findAllLessons(chapterId: string): Promise<Lesson[]> {
     const chapter = await this.chapterModel.findById(chapterId).exec();
     if (!chapter) {
-      throw new NotFoundException(`Chapter with id ${chapterId} was not found`);
+      throw new NotFoundException(`الفصل بالمعرف ${chapterId} غير موجود`);
     }
 
     return this.lessonModel
@@ -75,7 +75,7 @@ export class LessonsService {
       .exec();
 
     if (!lesson) {
-      throw new NotFoundException(`Lesson with id ${id} was not found`);
+      throw new NotFoundException(`الدرس بالمعرف ${id} غير موجود`);
     }
 
     return lesson;
@@ -93,7 +93,7 @@ export class LessonsService {
       .exec();
 
     if (!updatedLesson) {
-      throw new NotFoundException(`Lesson with id ${id} was not found`);
+      throw new NotFoundException(`الدرس بالمعرف ${id} غير موجود`);
     }
 
     return updatedLesson;
@@ -105,7 +105,7 @@ export class LessonsService {
   async removeLesson(id: string): Promise<Lesson> {
     const lesson = await this.lessonModel.findById(id).exec();
     if (!lesson) {
-      throw new NotFoundException(`Lesson with id ${id} was not found`);
+      throw new NotFoundException(`الدرس بالمعرف ${id} غير موجود`);
     }
 
     // Remove lesson reference from the parent chapter

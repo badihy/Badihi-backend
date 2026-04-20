@@ -26,20 +26,20 @@ export class QuizzesService {
       .exec();
     if (!chapter) {
       throw new NotFoundException(
-        `Chapter with id ${createQuizDto.chapter} was not found`,
+        `الفصل بالمعرف ${createQuizDto.chapter} غير موجود`,
       );
     }
 
     // A chapter cannot have both lessons and a quiz
     if (chapter.lessons && chapter.lessons.length > 0) {
       throw new BadRequestException(
-        'A quiz cannot be added to a chapter that already has lessons. A chapter can contain lessons or a quiz, but not both.',
+        'لا يمكن إضافة اختبار لفصل يحتوي على دروس. يمكن للفصل احتواء دروس أو اختبار فقط.',
       );
     }
 
     if (chapter.quiz) {
       throw new BadRequestException(
-        'This chapter already has a quiz. Delete the current quiz first or update it instead.',
+        'هذا الفصل لديه اختبار بالفعل. يرجى حذف الاختبار الحالي أولاً أو تحديثه.',
       );
     }
 
@@ -63,11 +63,11 @@ export class QuizzesService {
       .populate('quiz')
       .exec();
     if (!chapter) {
-      throw new NotFoundException(`Chapter with id ${chapterId} was not found`);
+      throw new NotFoundException(`الفصل بالمعرف ${chapterId} غير موجود`);
     }
 
     if (!chapter.quiz) {
-      throw new NotFoundException(`No quiz is linked to chapter ${chapterId}`);
+      throw new NotFoundException(`لا يوجد اختبار مرتبط بالفصل ${chapterId}`);
     }
 
     return chapter.quiz as any;
@@ -79,7 +79,7 @@ export class QuizzesService {
   async findOneQuiz(id: string): Promise<Quiz> {
     const quiz = await this.quizModel.findById(id).exec();
     if (!quiz) {
-      throw new NotFoundException(`Quiz with id ${id} was not found`);
+      throw new NotFoundException(`الاختبار بالمعرف ${id} غير موجود`);
     }
 
     return quiz;
@@ -97,7 +97,7 @@ export class QuizzesService {
       .exec();
 
     if (!updatedQuiz) {
-      throw new NotFoundException(`Quiz with id ${id} was not found`);
+      throw new NotFoundException(`الاختبار بالمعرف ${id} غير موجود`);
     }
 
     return updatedQuiz;
@@ -109,7 +109,7 @@ export class QuizzesService {
   async removeQuiz(id: string): Promise<Quiz> {
     const quiz = await this.quizModel.findById(id).exec();
     if (!quiz) {
-      throw new NotFoundException(`Quiz with id ${id} was not found`);
+      throw new NotFoundException(`الاختبار بالمعرف ${id} غير موجود`);
     }
 
     // Remove quiz reference from the parent chapter

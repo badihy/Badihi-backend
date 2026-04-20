@@ -58,7 +58,7 @@ export class BookmarksController {
 
   private ensureOwnUserScope(userId: string, currentUserId: string) {
     if (!currentUserId || userId !== currentUserId) {
-      throw new ForbiddenException("You cannot access another user's data");
+      throw new ForbiddenException('لا يمكنك الوصول إلى بيانات مستخدم آخر');
     }
   }
 }
