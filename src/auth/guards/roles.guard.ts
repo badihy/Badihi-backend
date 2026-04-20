@@ -19,10 +19,9 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<UserRole[] | undefined>(
-      ROLES_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+    const requiredRoles = this.reflector.getAllAndOverride<
+      UserRole[] | undefined
+    >(ROLES_KEY, [context.getHandler(), context.getClass()]);
 
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
@@ -32,7 +31,9 @@ export class RolesGuard implements CanActivate {
     const role = request.user?.role;
 
     if (!role || !requiredRoles.includes(role)) {
-      throw new ForbiddenException('لا تملك الصلاحية للوصول إلى هذا المورد');
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
     }
 
     return true;

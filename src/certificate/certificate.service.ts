@@ -1,42 +1,59 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Certificate, CertificateDocument } from './schemas/certificate.schema';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
 import { User, UserDocument } from '../user/schemas/user.schema';
 import { Course, CourseDocument } from '../courses/schemas/course.schema';
-import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.schema';
+import {
+  Enrollment,
+  EnrollmentDocument,
+} from '../courses/schemas/enrollment.schema';
 import { Chapter, ChapterDocument } from '../courses/schemas/chapter.schema';
 
 @Injectable()
 export class CertificateService {
   constructor(
-    @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
+    @InjectModel(Certificate.name)
+    private readonly certificateModel: Model<CertificateDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Course.name) private readonly courseModel: Model<CourseDocument>,
-    @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
-    @InjectModel(Chapter.name) private readonly chapterModel: Model<ChapterDocument>,
-  ) { }
+    @InjectModel(Course.name)
+    private readonly courseModel: Model<CourseDocument>,
+    @InjectModel(Enrollment.name)
+    private readonly enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Chapter.name)
+    private readonly chapterModel: Model<ChapterDocument>,
+  ) {}
 
   async issue(userId: string, courseId: string) {
     const user = await this.userModel.findById(userId);
     if (!user) {
-      throw new NotFoundException('المستخدم غير موجود');
+      throw new NotFoundException('User not found');
     }
 
     const course = await this.courseModel.findById(courseId);
     if (!course) {
-      throw new NotFoundException('الكورس غير موجود');
+      throw new NotFoundException('Course not found');
     }
 
-    const enrollment = await this.enrollmentModel.findOne({ user: userId, course: courseId });
+    const enrollment = await this.enrollmentModel.findOne({
+      user: userId,
+      course: courseId,
+    });
     if (!enrollment) {
-      throw new BadRequestException('المستخدم غير مسجل في هذا الكورس');
+      throw new BadRequestException('User is not enrolled in this course');
     }
 
     await this.ensureCourseCompletion(courseId, enrollment);
 
-    const existingCertificate = await this.certificateModel.findOne({ user: userId, course: courseId });
+    const existingCertificate = await this.certificateModel.findOne({
+      user: userId,
+      course: courseId,
+    });
     if (existingCertificate) {
       return existingCertificate;
     }
@@ -63,7 +80,7 @@ export class CertificateService {
       .populate('course', 'name description');
 
     if (!certificate) {
-      throw new NotFoundException('الشهادة غير موجودة');
+      throw new NotFoundException('Certificate not found');
     }
 
     return certificate;
@@ -76,14 +93,19 @@ export class CertificateService {
       .populate('course', 'name description');
 
     if (!certificate) {
-      throw new NotFoundException('رقم الشهادة غير صحيح');
+      throw new NotFoundException('Invalid certificate number');
     }
 
     return certificate;
   }
 
-  private async ensureCourseCompletion(courseId: string, enrollment: EnrollmentDocument) {
-    const chapters = await this.chapterModel.find({ course: courseId }).select('lessons quiz');
+  private async ensureCourseCompletion(
+    courseId: string,
+    enrollment: EnrollmentDocument,
+  ) {
+    const chapters = await this.chapterModel
+      .find({ course: courseId })
+      .select('lessons quiz');
 
     let totalItems = 0;
     for (const chapter of chapters) {
@@ -96,13 +118,22 @@ export class CertificateService {
     }
 
     if (totalItems === 0) {
-      throw new BadRequestException('لا يمكن إصدار شهادة قبل إضافة محتوى للكورس');
+      throw new BadRequestException(
+        'A certificate cannot be issued before course content is added',
+      );
     }
 
-    const completedItems = enrollment.completedLessons.length + enrollment.completedQuizzes.length;
+    const completedItems =
+      enrollment.completedLessons.length + enrollment.completedQuizzes.length;
 
-    if (!enrollment.isCompleted || enrollment.progress < 100 || completedItems < totalItems) {
-      throw new BadRequestException('لا يمكن إصدار شهادة قبل إكمال الكورس بالكامل وجميع السلايدات');
+    if (
+      !enrollment.isCompleted ||
+      enrollment.progress < 100 ||
+      completedItems < totalItems
+    ) {
+      throw new BadRequestException(
+        'A certificate cannot be issued until the course and all slides are fully completed',
+      );
     }
   }
 

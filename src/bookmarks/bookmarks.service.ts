@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Bookmark, BookmarkDocument } from './schemas/bookmark.schema';
@@ -14,12 +18,14 @@ export class BookmarksService {
   async add(userId: string, courseId: string): Promise<Bookmark> {
     const course = await this.courseModel.findById(courseId).exec();
     if (!course) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${courseId} غير موجودة`);
+      throw new NotFoundException(`Course with id ${courseId} was not found`);
     }
 
-    const existing = await this.bookmarkModel.findOne({ user: userId, course: courseId }).exec();
+    const existing = await this.bookmarkModel
+      .findOne({ user: userId, course: courseId })
+      .exec();
     if (existing) {
-      throw new BadRequestException('الدورة موجودة بالفعل في المفضلة');
+      throw new BadRequestException('The course is already bookmarked');
     }
 
     const bookmark = new this.bookmarkModel({ user: userId, course: courseId });
@@ -27,9 +33,11 @@ export class BookmarksService {
   }
 
   async remove(userId: string, courseId: string): Promise<void> {
-    const result = await this.bookmarkModel.deleteOne({ user: userId, course: courseId }).exec();
+    const result = await this.bookmarkModel
+      .deleteOne({ user: userId, course: courseId })
+      .exec();
     if (result.deletedCount === 0) {
-      throw new NotFoundException('الإشارة المرجعية غير موجودة');
+      throw new NotFoundException('Bookmark not found');
     }
   }
 
@@ -52,8 +60,13 @@ export class BookmarksService {
     }));
   }
 
-  async isBookmarked(userId: string, courseId: string): Promise<{ bookmarked: boolean }> {
-    const found = await this.bookmarkModel.findOne({ user: userId, course: courseId }).exec();
+  async isBookmarked(
+    userId: string,
+    courseId: string,
+  ): Promise<{ bookmarked: boolean }> {
+    const found = await this.bookmarkModel
+      .findOne({ user: userId, course: courseId })
+      .exec();
     return { bookmarked: !!found };
   }
 }

@@ -5,7 +5,10 @@ import { CertificateService } from './certificate.service';
 import { Certificate, CertificateSchema } from './schemas/certificate.schema';
 import { User, UserSchema } from '../user/schemas/user.schema';
 import { Course, CourseSchema } from '../courses/schemas/course.schema';
-import { Enrollment, EnrollmentSchema } from '../courses/schemas/enrollment.schema';
+import {
+  Enrollment,
+  EnrollmentSchema,
+} from '../courses/schemas/enrollment.schema';
 import { Chapter, ChapterSchema } from '../courses/schemas/chapter.schema';
 
 @Module({
@@ -21,4 +24,4 @@ import { Chapter, ChapterSchema } from '../courses/schemas/chapter.schema';
   controllers: [CertificateController],
   providers: [CertificateService],
 })
-export class CertificateModule { }
+export class CertificateModule {}

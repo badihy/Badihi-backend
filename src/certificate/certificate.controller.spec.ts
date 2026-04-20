@@ -15,7 +15,9 @@ describe('CertificateController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CertificateController],
-      providers: [{ provide: CertificateService, useValue: certificateServiceMock }],
+      providers: [
+        { provide: CertificateService, useValue: certificateServiceMock },
+      ],
     }).compile();
 
     controller = module.get<CertificateController>(CertificateController);
@@ -25,17 +27,25 @@ describe('CertificateController', () => {
   it('issues certificates for the authenticated user only', async () => {
     await controller.issue({ courseId: 'course-1' }, 'user-1');
 
-    expect(certificateServiceMock.issue).toHaveBeenCalledWith('user-1', 'course-1');
+    expect(certificateServiceMock.issue).toHaveBeenCalledWith(
+      'user-1',
+      'course-1',
+    );
   });
 
   it('blocks reading another user certificates', async () => {
-    expect(() => controller.findByUser('user-2', 'user-1')).toThrow(ForbiddenException);
+    expect(() => controller.findByUser('user-2', 'user-1')).toThrow(
+      ForbiddenException,
+    );
     expect(certificateServiceMock.findByUser).not.toHaveBeenCalled();
   });
 
   it('loads a certificate within the authenticated user scope', async () => {
     await controller.findOne('cert-1', 'user-1');
 
-    expect(certificateServiceMock.findOneForUser).toHaveBeenCalledWith('cert-1', 'user-1');
+    expect(certificateServiceMock.findOneForUser).toHaveBeenCalledWith(
+      'cert-1',
+      'user-1',
+    );
   });
 });

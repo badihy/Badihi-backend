@@ -1,11 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-/** جسم طلبات التقدم (درس/اختبار) فارغ لأن المستخدم يُستخرج من access token */
+/** Progress request bodies are empty because the user is derived from the access token. */
 export class MarkEnrollmentUserDto {
   @ApiPropertyOptional({
     type: String,
     deprecated: true,
-    description: 'لم يعد هذا الحقل مستخدماً؛ يُحدد المستخدم من access token.',
+    description:
+      'This field is no longer used. The user is determined from the access token.',
   })
   readonly userId?: string;
 }

@@ -1,6 +1,6 @@
 const sharedStyles = `
   body {
-    font-family: 'Tajawal', sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -28,11 +28,11 @@ const sharedStyles = `
 export function getVerifyEmailSuccessPage(): string {
   return `
     <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>تم التحقق من البريد الإلكتروني</title>
+      <title>Email Verified</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -64,7 +64,7 @@ export function getVerifyEmailSuccessPage(): string {
           font-weight: 700;
           cursor: pointer;
           margin-top: 20px;
-          font-family: 'Tajawal', sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .open-app-btn:hover {
           background-color: #4527a0;
@@ -74,10 +74,10 @@ export function getVerifyEmailSuccessPage(): string {
     <body>
       <div class="container">
         <div class="success-icon">✅</div>
-        <h1>تم التحقق من البريد الإلكتروني بنجاح!</h1>
-        <p>جاري فتح التطبيق...</p>
+        <h1>Email verified successfully!</h1>
+        <p>Opening the app...</p>
         <div class="spinner"></div>
-        <button class="open-app-btn" onclick="openApp()">افتح التطبيق</button>
+        <button class="open-app-btn" onclick="openApp()">Open app</button>
       </div>
       <script>
         let appOpened = false;
@@ -123,11 +123,11 @@ export function getVerifyEmailSuccessPage(): string {
 export function getVerifyEmailErrorPage(): string {
   return `
     <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>خطأ في التحقق</title>
+      <title>Verification Error</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -141,8 +141,8 @@ export function getVerifyEmailErrorPage(): string {
     <body>
       <div class="container">
         <div class="error-icon">❌</div>
-        <h1>فشل التحقق</h1>
-        <p>الرابط غير صالح أو منتهي الصلاحية. يرجى طلب رابط تحقق جديد.</p>
+        <h1>Verification failed</h1>
+        <p>The link is invalid or has expired. Please request a new verification link.</p>
       </div>
     </body>
     </html>
@@ -152,11 +152,11 @@ export function getVerifyEmailErrorPage(): string {
 export function getInvalidResetPasswordLinkPage(): string {
   return `
     <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>خطأ</title>
+      <title>Error</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -165,8 +165,8 @@ export function getInvalidResetPasswordLinkPage(): string {
     </head>
     <body>
       <div class="container">
-        <h1>الرابط غير صالح</h1>
-        <p>يرجى استخدام الرابط الموجود في البريد الإلكتروني.</p>
+        <h1>Invalid link</h1>
+        <p>Please use the link provided in the email.</p>
       </div>
     </body>
     </html>
@@ -176,11 +176,11 @@ export function getInvalidResetPasswordLinkPage(): string {
 export function getResetPasswordPage(token: string): string {
   return `
     <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>إعادة تعيين كلمة المرور</title>
+      <title>Reset Password</title>
       <style>
         ${sharedStyles}
         h1 {
@@ -198,7 +198,7 @@ export function getResetPasswordPage(token: string): string {
           border: 2px solid #e0e0e0;
           border-radius: 8px;
           font-size: 16px;
-          font-family: 'Tajawal', sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         input:focus {
           outline: none;
@@ -213,7 +213,7 @@ export function getResetPasswordPage(token: string): string {
           font-size: 16px;
           font-weight: 700;
           cursor: pointer;
-          font-family: 'Tajawal', sans-serif;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         button:hover {
           background-color: #4527a0;
@@ -245,15 +245,15 @@ export function getResetPasswordPage(token: string): string {
     </head>
     <body>
       <div class="container">
-        <h1>إعادة تعيين كلمة المرور</h1>
+        <h1>Reset Password</h1>
         <div id="message" class="message"></div>
         <form id="resetForm" onsubmit="handleSubmit(event)">
           <input type="hidden" id="token" value="${token}">
-          <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة" required>
-          <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور" required>
-          <button type="submit">إعادة تعيين</button>
+          <input type="password" id="newPassword" placeholder="New password" required>
+          <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+          <button type="submit">Reset password</button>
         </form>
-        <p class="info">إذا كنت تستخدم التطبيق، سيتم فتح التطبيق تلقائياً.</p>
+        <p class="info">If you are using the mobile app, it may open automatically.</p>
       </div>
       <script>
         async function handleSubmit(event) {
@@ -265,7 +265,7 @@ export function getResetPasswordPage(token: string): string {
 
           if (newPassword !== confirmPassword) {
             messageDiv.className = 'message error';
-            messageDiv.textContent = 'كلمات المرور غير متطابقة';
+            messageDiv.textContent = 'Passwords do not match';
             return;
           }
 
@@ -286,15 +286,15 @@ export function getResetPasswordPage(token: string): string {
 
             if (response.ok) {
               messageDiv.className = 'message success';
-              messageDiv.textContent = 'تم إعادة تعيين كلمة المرور بنجاح!';
+              messageDiv.textContent = 'Password reset successfully!';
               document.getElementById('resetForm').reset();
             } else {
               messageDiv.className = 'message error';
-              messageDiv.textContent = data.message || 'حدث خطأ ما';
+              messageDiv.textContent = data.message || 'Something went wrong';
             }
           } catch (error) {
             messageDiv.className = 'message error';
-            messageDiv.textContent = 'حدث خطأ في الاتصال';
+            messageDiv.textContent = 'A network error occurred';
           }
         }
       </script>

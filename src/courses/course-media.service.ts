@@ -22,14 +22,17 @@ export class CourseMediaService {
     let thumbnailImageUrl = createCourseDto.thumbnailImage;
 
     if (coverImage?.[0]) {
-      coverImageUrl = await this.uploadCourseImage(coverImage[0], 'صورة الغلاف');
+      coverImageUrl = await this.uploadCourseImage(
+        coverImage[0],
+        'cover image',
+      );
     }
 
     if (thumbnailImage?.[0]) {
       try {
         thumbnailImageUrl = await this.uploadCourseImage(
           thumbnailImage[0],
-          'الصورة المصغرة',
+          'thumbnail image',
         );
       } catch (error) {
         if (coverImageUrl && coverImageUrl !== createCourseDto.coverImage) {
@@ -53,7 +56,10 @@ export class CourseMediaService {
     const updateData: Record<string, unknown> = { ...updateCourseDto };
 
     if (files?.cover?.[0]) {
-      updateData.coverImage = await this.uploadCourseImage(files.cover[0], 'صورة الغلاف');
+      updateData.coverImage = await this.uploadCourseImage(
+        files.cover[0],
+        'cover image',
+      );
       if (
         existingCourse.coverImage &&
         existingCourse.coverImage !== updateCourseDto.coverImage &&
@@ -67,7 +73,7 @@ export class CourseMediaService {
       try {
         updateData.thumbnailImage = await this.uploadCourseImage(
           files.thumbnail[0],
-          'الصورة المصغرة',
+          'thumbnail image',
         );
       } catch (error) {
         if (
@@ -84,14 +90,18 @@ export class CourseMediaService {
         existingCourse.thumbnailImage !== updateCourseDto.thumbnailImage &&
         existingCourse.thumbnailImage.startsWith('https://')
       ) {
-        await this.bunnyService.removeFileIfExists(existingCourse.thumbnailImage);
+        await this.bunnyService.removeFileIfExists(
+          existingCourse.thumbnailImage,
+        );
       }
     }
 
     return updateData;
   }
 
-  async cleanupCourseMedia(course: Pick<CourseDocument, 'coverImage' | 'thumbnailImage'>) {
+  async cleanupCourseMedia(
+    course: Pick<CourseDocument, 'coverImage' | 'thumbnailImage'>,
+  ) {
     await Promise.allSettled([
       this.removeRemoteCourseImage(course.coverImage),
       this.removeRemoteCourseImage(course.thumbnailImage),
@@ -102,18 +112,18 @@ export class CourseMediaService {
     try {
       return await this.bunnyService.uploadFile(file);
     } catch (error: any) {
-      const message = error?.message || 'تعذر رفع الملف';
+      const message = error?.message || 'Failed to upload file';
       if (
         typeof message === 'string' &&
-        (message.includes('الملف') ||
-          message.includes('مهلة') ||
-          message.includes('الاتصال') ||
+        (message.includes('file') ||
+          message.includes('timeout') ||
+          message.includes('connection') ||
           message.includes('Bunny'))
       ) {
-        throw new BadRequestException(`فشل تحميل ${label}: ${message}`);
+        throw new BadRequestException(`Failed to upload ${label}: ${message}`);
       }
 
-      throw new InternalServerErrorException(`فشل تحميل ${label}`);
+      throw new InternalServerErrorException(`Failed to upload ${label}`);
     }
   }
 

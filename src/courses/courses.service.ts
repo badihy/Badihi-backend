@@ -15,18 +15,22 @@ import { CourseQueryService } from './course-query.service';
 export class CoursesService {
   constructor(
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
-    @InjectModel(Enrollment.name) private enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Enrollment.name)
+    private enrollmentModel: Model<EnrollmentDocument>,
     private readonly courseMediaService: CourseMediaService,
     private readonly courseStatsService: CourseStatsService,
     private readonly courseResponseMapperService: CourseResponseMapperService,
     private readonly courseQueryService: CourseQueryService,
-  ) { }
+  ) {}
 
   async create(
     createCourseDto: CreateCourseDto,
     files: { coverImage: any[]; thumbnailImage: any[] },
   ): Promise<Course> {
-    const media = await this.courseMediaService.prepareCreateMedia(createCourseDto, files);
+    const media = await this.courseMediaService.prepareCreateMedia(
+      createCourseDto,
+      files,
+    );
 
     // Create course with uploaded image URLs
     const courseData = {
@@ -62,11 +66,13 @@ export class CoursesService {
     // Pre-compute enrollments count and average rating for all returned courses
     const courseIds = courses.map((c) => c._id).filter(Boolean);
     const statsMap = await this.courseStatsService.getCourseStatsMap(courseIds);
-    const reviewsMap = await this.courseStatsService.getCourseReviewsMap(courseIds);
-    const bookmarkedSet = await this.courseStatsService.getBookmarkedCourseIdsSet(
-      userId,
-      courseIds,
-    );
+    const reviewsMap =
+      await this.courseStatsService.getCourseReviewsMap(courseIds);
+    const bookmarkedSet =
+      await this.courseStatsService.getBookmarkedCourseIdsSet(
+        userId,
+        courseIds,
+      );
 
     return this.courseResponseMapperService.mapCoursesResponse(
       courses,
@@ -95,17 +101,25 @@ export class CoursesService {
 
     const course = await query.exec();
     if (!course) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
+      throw new NotFoundException(`Course with id ${id} was not found`);
     }
 
     // Get stats for this single course
-    const statsMap = await this.courseStatsService.getCourseStatsMap([course._id]);
-    const stats = statsMap[course._id.toString()] ?? undefined;
-    const reviewsMap = await this.courseStatsService.getCourseReviewsMap([course._id]);
-    const reviewsBundle = reviewsMap[course._id.toString()] ?? { reviews: [], reviewsCount: 0 };
-    const bookmarkedSet = await this.courseStatsService.getBookmarkedCourseIdsSet(userId, [
+    const statsMap = await this.courseStatsService.getCourseStatsMap([
       course._id,
     ]);
+    const stats = statsMap[course._id.toString()] ?? undefined;
+    const reviewsMap = await this.courseStatsService.getCourseReviewsMap([
+      course._id,
+    ]);
+    const reviewsBundle = reviewsMap[course._id.toString()] ?? {
+      reviews: [],
+      reviewsCount: 0,
+    };
+    const bookmarkedSet =
+      await this.courseStatsService.getBookmarkedCourseIdsSet(userId, [
+        course._id,
+      ]);
     const isBookmarked = bookmarkedSet.has(course._id.toString());
 
     return this.courseResponseMapperService.mapCourseResponse(
@@ -153,14 +167,14 @@ export class CoursesService {
   }
 
   async update(
-    id: string, 
-    updateCourseDto: UpdateCourseDto, 
-    files?: { cover?: any[]; thumbnail?: any[] }
+    id: string,
+    updateCourseDto: UpdateCourseDto,
+    files?: { cover?: any[]; thumbnail?: any[] },
   ): Promise<Course> {
     // Get existing course to check for old images
     const existingCourse = await this.courseModel.findById(id).exec();
     if (!existingCourse) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
+      throw new NotFoundException(`Course with id ${id} was not found`);
     }
 
     const updateData = await this.courseMediaService.prepareUpdateMedia(
@@ -169,9 +183,11 @@ export class CoursesService {
       files,
     );
 
-    const updatedCourse = await this.courseModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+    const updatedCourse = await this.courseModel
+      .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
     if (!updatedCourse) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
+      throw new NotFoundException(`Course with id ${id} was not found`);
     }
     return updatedCourse;
   }
@@ -179,7 +195,7 @@ export class CoursesService {
   async remove(id: string): Promise<Course> {
     const courseToDelete = await this.courseModel.findById(id).exec();
     if (!courseToDelete) {
-      throw new NotFoundException(`الدورة التدريبية بالمعرف ${id} غير موجودة`);
+      throw new NotFoundException(`Course with id ${id} was not found`);
     }
 
     await this.courseMediaService.cleanupCourseMedia(courseToDelete);
@@ -192,7 +208,13 @@ export class CoursesService {
   async findEnrolledCourses(
     userId: string,
     options: { page: number; limit: number; search?: string; filter?: string },
-  ): Promise<{ courses: any[]; total: number; page: number; limit: number; totalPages: number }> {
+  ): Promise<{
+    courses: any[];
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  }> {
     const { page, limit, search, filter } = options;
     const normalizedPage = Math.max(1, Number(page) || 1);
     const normalizedLimit = Math.min(100, Math.max(1, Number(limit) || 10));
@@ -208,13 +230,22 @@ export class CoursesService {
     const orderedCourseIds = Array.from(
       new Set(
         enrollments
-          .map((enrollment: any) => enrollment?.course?.toString?.() ?? String(enrollment?.course))
+          .map(
+            (enrollment: any) =>
+              enrollment?.course?.toString?.() ?? String(enrollment?.course),
+          )
           .filter(Boolean),
       ),
     );
 
     if (orderedCourseIds.length === 0) {
-      return { courses: [], total: 0, page: normalizedPage, limit: normalizedLimit, totalPages: 0 };
+      return {
+        courses: [],
+        total: 0,
+        page: normalizedPage,
+        limit: normalizedLimit,
+        totalPages: 0,
+      };
     }
 
     const courseFilter: any = { _id: { $in: orderedCourseIds } };
@@ -238,7 +269,10 @@ export class CoursesService {
       matchingCourseIds.has(id),
     );
     const total = filteredOrderedCourseIds.length;
-    const pagedCourseIds = filteredOrderedCourseIds.slice(skip, skip + normalizedLimit);
+    const pagedCourseIds = filteredOrderedCourseIds.slice(
+      skip,
+      skip + normalizedLimit,
+    );
 
     if (pagedCourseIds.length === 0) {
       return {
@@ -258,7 +292,8 @@ export class CoursesService {
     const ordering = new Map(pagedCourseIds.map((id, index) => [id, index]));
     courses.sort(
       (left: any, right: any) =>
-        (ordering.get(left._id.toString()) ?? 0) - (ordering.get(right._id.toString()) ?? 0),
+        (ordering.get(left._id.toString()) ?? 0) -
+        (ordering.get(right._id.toString()) ?? 0),
     );
 
     const statsMap = await this.courseStatsService.getCourseStatsMap(
@@ -267,10 +302,11 @@ export class CoursesService {
     const reviewsMap = await this.courseStatsService.getCourseReviewsMap(
       courses.map((course) => course._id),
     );
-    const bookmarkedSet = await this.courseStatsService.getBookmarkedCourseIdsSet(
-      userId,
-      courses.map((course) => course._id),
-    );
+    const bookmarkedSet =
+      await this.courseStatsService.getBookmarkedCourseIdsSet(
+        userId,
+        courses.map((course) => course._id),
+      );
 
     return {
       courses: this.courseResponseMapperService.mapCoursesResponse(

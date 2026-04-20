@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, ForbiddenException, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BookmarksService } from './bookmarks.service';
 import { CreateBookmarkDto } from './dto/create-bookmark.dto';
@@ -11,13 +19,13 @@ export class BookmarksController {
   constructor(private readonly bookmarksService: BookmarksService) {}
 
   @Post()
-  @ApiOperation({ summary: 'إضافة دورة إلى المفضلة (قائمة الرغبات)' })
+  @ApiOperation({ summary: 'Add a course to bookmarks' })
   add(@Body() dto: CreateBookmarkDto, @CurrentUser('id') userId: string) {
     return this.bookmarksService.add(userId, dto.courseId);
   }
 
   @Delete(':userId/:courseId')
-  @ApiOperation({ summary: 'إزالة دورة من المفضلة' })
+  @ApiOperation({ summary: 'Remove a course from bookmarks' })
   remove(
     @Param('userId') userId: string,
     @Param('courseId') courseId: string,
@@ -28,14 +36,17 @@ export class BookmarksController {
   }
 
   @Get('user/:userId')
-  @ApiOperation({ summary: 'جلب جميع الدورات المحفوظة في المفضلة لمستخدم' })
-  findByUser(@Param('userId') userId: string, @CurrentUser('id') currentUserId: string) {
+  @ApiOperation({ summary: 'Get all bookmarked courses for a user' })
+  findByUser(
+    @Param('userId') userId: string,
+    @CurrentUser('id') currentUserId: string,
+  ) {
     this.ensureOwnUserScope(userId, currentUserId);
     return this.bookmarksService.findByUser(userId);
   }
 
   @Get('user/:userId/course/:courseId')
-  @ApiOperation({ summary: 'التحقق مما إذا كانت الدورة في المفضلة' })
+  @ApiOperation({ summary: 'Check whether a course is bookmarked' })
   isBookmarked(
     @Param('userId') userId: string,
     @Param('courseId') courseId: string,
@@ -47,7 +58,7 @@ export class BookmarksController {
 
   private ensureOwnUserScope(userId: string, currentUserId: string) {
     if (!currentUserId || userId !== currentUserId) {
-      throw new ForbiddenException('لا يمكنك الوصول إلى بيانات مستخدم آخر');
+      throw new ForbiddenException("You cannot access another user's data");
     }
   }
 }

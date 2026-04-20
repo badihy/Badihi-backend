@@ -37,7 +37,11 @@ describe('CategoriesService', () => {
 
   it('keeps the current image when updating without a new file', async () => {
     const existingCategory = { _id: 'cat-1', image: 'old-image-url' };
-    const updatedCategory = { _id: 'cat-1', image: 'old-image-url', name: 'Updated' };
+    const updatedCategory = {
+      _id: 'cat-1',
+      image: 'old-image-url',
+      name: 'Updated',
+    };
 
     categoryModelMock.findById.mockReturnValue({
       exec: jest.fn().mockResolvedValue(existingCategory),
@@ -58,7 +62,11 @@ describe('CategoriesService', () => {
 
   it('deletes the previous image after uploading a replacement', async () => {
     const existingCategory = { _id: 'cat-1', image: 'old-image-url' };
-    const updatedCategory = { _id: 'cat-1', image: 'new-image-url', name: 'Updated' };
+    const updatedCategory = {
+      _id: 'cat-1',
+      image: 'new-image-url',
+      name: 'Updated',
+    };
     const file = { originalname: 'cat.png' };
 
     categoryModelMock.findById.mockReturnValue({
@@ -76,7 +84,11 @@ describe('CategoriesService', () => {
       { name: 'Updated', image: 'new-image-url' },
       { new: true },
     );
-    expect(bunnyServiceMock.removeFileIfExists).toHaveBeenCalledWith('old-image-url');
-    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalledWith('new-image-url');
+    expect(bunnyServiceMock.removeFileIfExists).toHaveBeenCalledWith(
+      'old-image-url',
+    );
+    expect(bunnyServiceMock.removeFileIfExists).not.toHaveBeenCalledWith(
+      'new-image-url',
+    );
   });
 });

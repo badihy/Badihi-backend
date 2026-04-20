@@ -18,8 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "seed:courses": "ts-node -r tsconfig-paths/register src/scripts/seed-courses.ts",
-    "verify:id-token": "ts-node -r tsconfig-paths/register src/scripts/verify-mobile-id-token.ts"
+    "seed:courses": "ts-node -r tsconfig-paths/register src/scripts/seed-courses.ts"
   },
   "dependencies": {
     "@codegenie/serverless-express": "^4.17.1",

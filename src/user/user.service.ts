@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, forwardRef, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  forwardRef,
+  Inject,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User, UserDocument } from './schemas/user.schema';
@@ -13,25 +20,39 @@ import { AuthService } from '../auth/auth.service';
 import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UpdateProfileImageDto } from './dto/update-profile-image.dto';
 import { BunnyService } from '../common/services/bunny.service';
-import { Enrollment, EnrollmentDocument } from '../courses/schemas/enrollment.schema';
+import {
+  Enrollment,
+  EnrollmentDocument,
+} from '../courses/schemas/enrollment.schema';
 import { Report, ReportDocument } from '../reports/schemas/report.schema';
-import { Certificate, CertificateDocument } from '../certificate/schemas/certificate.schema';
-import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
+import {
+  Certificate,
+  CertificateDocument,
+} from '../certificate/schemas/certificate.schema';
+import {
+  Bookmark,
+  BookmarkDocument,
+} from '../bookmarks/schemas/bookmark.schema';
 import { UserRole } from '../auth/enums/user-role.enum';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Enrollment.name) private readonly enrollmentModel: Model<EnrollmentDocument>,
-    @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
-    @InjectModel(Certificate.name) private readonly certificateModel: Model<CertificateDocument>,
-    @InjectModel(Bookmark.name) private readonly bookmarkModel: Model<BookmarkDocument>,
+    @InjectModel(Enrollment.name)
+    private readonly enrollmentModel: Model<EnrollmentDocument>,
+    @InjectModel(Report.name)
+    private readonly reportModel: Model<ReportDocument>,
+    @InjectModel(Certificate.name)
+    private readonly certificateModel: Model<CertificateDocument>,
+    @InjectModel(Bookmark.name)
+    private readonly bookmarkModel: Model<BookmarkDocument>,
     @InjectConnection() private readonly connection: Connection,
     private readonly emailService: EmailService,
-    @Inject(forwardRef(() => AuthService)) private readonly authService: AuthService,
+    @Inject(forwardRef(() => AuthService))
+    private readonly authService: AuthService,
     private readonly bunnyService: BunnyService,
-  ) { }
+  ) {}
 
   /**
    * Creates a new user account and automatically logs them in.
@@ -44,9 +65,12 @@ export class UserService {
    * @returns { token, refreshToken, user } — same shape as the login response
    */
   async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
-    const username = createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
+    const username =
+      createUserDto.email.split('@')[0] + Math.floor(Math.random() * 1000);
     const password = await bcrypt.hash(createUserDto.password, 10);
-    const profileImage = file ? await this.bunnyService.uploadFile(file) : undefined;
+    const profileImage = file
+      ? await this.bunnyService.uploadFile(file)
+      : undefined;
     const user = await this.userModel.create({
       ...createUserDto,
       profileImage: profileImage,
@@ -55,27 +79,36 @@ export class UserService {
     });
 
     // Generate verification token and send welcome email with deep link
-    const verificationToken = await this.generateVerificationToken(user._id.toString());
-    await this.emailService.sendWelcomeEmail(user.email, user.fullName, verificationToken);
+    const verificationToken = await this.generateVerificationToken(
+      user._id.toString(),
+    );
+    await this.emailService.sendWelcomeEmail(
+      user.email,
+      user.fullName,
+      verificationToken,
+    );
 
     // Auto-login: issue access & refresh tokens right after registration
     const tokens = await this.authService.getTokens(user._id, user.email);
-    await this.authService.updateRefreshToken(user._id.toString(), tokens.refreshToken);
+    await this.authService.updateRefreshToken(
+      user._id.toString(),
+      tokens.refreshToken,
+    );
 
-        return {
-          token: tokens.accessToken,
-          refreshToken: tokens.refreshToken,
-          user: {
-            _id: user._id,
+    return {
+      token: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        _id: user._id,
         username: user.username,
         email: user.email,
-            phone: user.phone,
-            profileImage: user.profileImage,
-            isVerified: user.isVerified,
-            fullName: user.fullName,
-            role: user.role ?? UserRole.USER,
-          },
-        };
+        phone: user.phone,
+        profileImage: user.profileImage,
+        isVerified: user.isVerified,
+        fullName: user.fullName,
+        role: user.role ?? UserRole.USER,
+      },
+    };
   }
 
   async findAll() {
@@ -95,9 +128,13 @@ export class UserService {
       await this.ensureUsernameAvailable(updateUserDto.username, id);
     }
 
-    const updatedUser = await this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
+    const updatedUser = await this.userModel.findByIdAndUpdate(
+      id,
+      updateUserDto,
+      { new: true },
+    );
     if (!updatedUser) {
-      throw new NotFoundException('المستخدم غير موجود');
+      throw new NotFoundException('User not found');
     }
 
     return updatedUser;
@@ -112,20 +149,24 @@ export class UserService {
     );
 
     if (!updatedUser) {
-      throw new NotFoundException('المستخدم غير موجود');
+      throw new NotFoundException('User not found');
     }
 
     return updatedUser;
   }
 
-  async updateProfileImage(id: string, updateProfileImageDto: UpdateProfileImageDto, file?: Express.Multer.File) : Promise<UserDocument> {
+  async updateProfileImage(
+    id: string,
+    updateProfileImageDto: UpdateProfileImageDto,
+    file?: Express.Multer.File,
+  ): Promise<UserDocument> {
     if (!file) {
-      throw new BadRequestException('صورة الملف الشخصي مطلوبة');
+      throw new BadRequestException('Profile image is required');
     }
 
     const existingUser = await this.userModel.findById(id);
     if (!existingUser) {
-      throw new NotFoundException('المستخدم غير موجود');
+      throw new NotFoundException('User not found');
     }
 
     const profileImage = await this.bunnyService.uploadFile(file);
@@ -137,10 +178,13 @@ export class UserService {
 
     if (!updatedUser) {
       await this.bunnyService.removeFileIfExists(profileImage);
-      throw new NotFoundException('المستخدم غير موجود');
+      throw new NotFoundException('User not found');
     }
 
-    if (existingUser.profileImage && existingUser.profileImage !== profileImage) {
+    if (
+      existingUser.profileImage &&
+      existingUser.profileImage !== profileImage
+    ) {
       await this.bunnyService.removeFileIfExists(existingUser.profileImage);
     }
 
@@ -149,7 +193,9 @@ export class UserService {
 
   async updateRefreshToken(userId: string, refreshToken: string) {
     const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
-    return await this.userModel.findByIdAndUpdate(userId, { refreshToken: hashedRefreshToken });
+    return await this.userModel.findByIdAndUpdate(userId, {
+      refreshToken: hashedRefreshToken,
+    });
   }
 
   async updateResetToken(userId: string, token: string, expires: Date) {
@@ -238,7 +284,7 @@ export class UserService {
       await session.withTransaction(async () => {
         const userToDelete = await this.userModel.findById(id).session(session);
         if (!userToDelete) {
-          throw new NotFoundException('المستخدم غير موجود');
+          throw new NotFoundException('User not found');
         }
         deletedUserProfileImage = userToDelete.profileImage;
 
@@ -254,7 +300,7 @@ export class UserService {
 
     await this.bunnyService.removeFileIfExists(deletedUserProfileImage);
 
-    return { message: 'تم حذف المستخدم بنجاح' };
+    return { message: 'User deleted successfully' };
   }
 
   /**
@@ -266,27 +312,33 @@ export class UserService {
     return await this.userModel.findByIdAndUpdate(
       userId,
       { $addToSet: { enrolledCourses: courseId } },
-      { new: true }
+      { new: true },
     );
   }
 
-  private async ensureUsernameAvailable(username: string, currentUserId: string) {
+  private async ensureUsernameAvailable(
+    username: string,
+    currentUserId: string,
+  ) {
     const existingUser = await this.userModel.findOne({ username });
     if (existingUser && existingUser._id.toString() !== currentUserId) {
-      throw new ConflictException('اسم المستخدم مستخدم بالفعل');
+      throw new ConflictException('Username is already in use');
     }
   }
 
   private async generateUniqueUsername(email?: string, fullName?: string) {
-    const base = (email?.split('@')[0] || fullName || 'user')
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '_')
-      .replace(/_+/g, '_')
-      .replace(/^_+|_+$/g, '') || 'user';
+    const base =
+      (email?.split('@')[0] || fullName || 'user')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '') || 'user';
 
     for (let i = 0; i < 10; i++) {
       const candidate = `${base}${Math.floor(Math.random() * 1000)}`;
-      const existingUser = await this.userModel.findOne({ username: candidate });
+      const existingUser = await this.userModel.findOne({
+        username: candidate,
+      });
       if (!existingUser) return candidate;
     }
 

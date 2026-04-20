@@ -6,39 +6,39 @@ import { getResetPasswordEmailHtml } from '../templates/reset-password.template'
 @Global()
 @Injectable()
 export class EmailService {
-    constructor(private readonly mailService: MailerService) { }
+  constructor(private readonly mailService: MailerService) {}
 
-    /**
-     * Sends welcome email with verification link
-     * Used during user registration
-     * @param email User's email address
-     * @param name User's full name
-     * @param token Verification token
-     */
-    async sendWelcomeEmail(email: string, name: string, token: string) {
-        // Verification link (Direct App Link)
-        const appLink = `https://api.badihy.com/verify-email?token=${token}`;
+  /**
+   * Sends welcome email with verification link
+   * Used during user registration
+   * @param email User's email address
+   * @param name User's full name
+   * @param token Verification token
+   */
+  async sendWelcomeEmail(email: string, name: string, token: string) {
+    // Verification link (Direct App Link)
+    const appLink = `https://api.badihy.com/verify-email?token=${token}`;
 
-        const html = getWelcomeEmailHtml(name, appLink);
+    const html = getWelcomeEmailHtml(name, appLink);
 
-        await this.mailService.sendMail({
-            to: email,
-            subject: 'مرحباً بك في بديهي! فعل حسابك الآن',
-            html: html,
-        });
-    }
+    await this.mailService.sendMail({
+      to: email,
+      subject: 'Welcome to Badihi! Activate your account now',
+      html: html,
+    });
+  }
 
-    async sendResetPasswordEmail(email: string, name: string, token: string) {
-        // App Link for Reset Password
-        // Assuming app handles /reset-password?token=...
-        const appLink = `https://api.badihy.com/reset-password?token=${token}`;
+  async sendResetPasswordEmail(email: string, name: string, token: string) {
+    // App Link for Reset Password
+    // Assuming app handles /reset-password?token=...
+    const appLink = `https://api.badihy.com/reset-password?token=${token}`;
 
-        const html = getResetPasswordEmailHtml(name, appLink);
+    const html = getResetPasswordEmailHtml(name, appLink);
 
-        await this.mailService.sendMail({
-            to: email,
-            subject: 'إعادة تعيين كلمة المرور - بديهي',
-            html: html,
-        });
-    }
+    await this.mailService.sendMail({
+      to: email,
+      subject: 'Reset your password - Badihi',
+      html: html,
+    });
+  }
 }

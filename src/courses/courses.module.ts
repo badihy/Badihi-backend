@@ -35,27 +35,27 @@ import { CourseQueryService } from './course-query.service';
       { name: 'Slide', schema: SlideSchema },
       { name: 'Enrollment', schema: EnrollmentSchema },
       { name: 'Bookmark', schema: BookmarkSchema },
-    ])
+    ]),
   ],
   controllers: [
-    CoursesController, 
-    ChaptersController, 
+    CoursesController,
+    ChaptersController,
     LessonsController,
     QuizzesController,
-    EnrollmentsController
+    EnrollmentsController,
   ],
   providers: [
-    CoursesService, 
-    BunnyService, 
+    CoursesService,
+    BunnyService,
     CourseMediaService,
     CourseStatsService,
     CourseResponseMapperService,
     CourseQueryService,
-    ChaptersService, 
+    ChaptersService,
     LessonsService,
     QuizzesService,
-    EnrollmentsService
+    EnrollmentsService,
   ],
-  exports: [CoursesService, MongooseModule] // Export MongooseModule for seeding scripts
+  exports: [CoursesService, MongooseModule], // Export MongooseModule for seeding scripts
 })
-export class CoursesModule { }
+export class CoursesModule {}

@@ -1,4 +1,12 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { EnrollmentsService } from './enrollments.service';
 import {
   ApiBearerAuth,
@@ -19,23 +27,27 @@ export class EnrollmentsController {
   constructor(private readonly enrollmentsService: EnrollmentsService) {}
 
   @Post(':id/enroll')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة (Mongo ObjectId)' })
+  @ApiParam({ name: 'id', description: 'Course id (Mongo ObjectId)' })
   @ApiBody({
     description:
-      'لا حاجة لحقول في الجسم؛ يُحدد المستخدم من ترويسة Authorization (access token).',
+      'No request body fields are needed. The user is determined from the Authorization header access token.',
     schema: { type: 'object', additionalProperties: false, example: {} },
   })
   @ApiOperation({
     summary: 'Enroll a user in a course',
-    description: 'يتطلب access token؛ يُستخرج معرّف المستخدم من الرمز وليس من الجسم.',
+    description:
+      'Requires an access token. The user id is extracted from the token, not from the request body.',
   })
-  enroll(@Param('id') id: string, @Req() req: Request & { user: { id: string } }) {
+  enroll(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
     return this.enrollmentsService.enroll(id, req.user.id);
   }
 
   @Get(':id/progress/:userId')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة' })
-  @ApiParam({ name: 'userId', description: 'معرّف المستخدم' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiParam({ name: 'userId', description: 'User id' })
   @ApiOperation({ summary: 'Get user progress for a course' })
   getCourseProgress(
     @Param('id') id: string,
@@ -47,8 +59,8 @@ export class EnrollmentsController {
   }
 
   @Post(':id/progress/lesson/:lessonId')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة' })
-  @ApiParam({ name: 'lessonId', description: 'معرّف الدرس' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiParam({ name: 'lessonId', description: 'Lesson id' })
   @ApiOperation({ summary: 'Mark a lesson as completed for a user' })
   markLessonCompleted(
     @Param('id') courseId: string,
@@ -57,12 +69,16 @@ export class EnrollmentsController {
     @CurrentUser('id') userId: string,
   ) {
     void body;
-    return this.enrollmentsService.markLessonCompleted(courseId, userId, lessonId);
+    return this.enrollmentsService.markLessonCompleted(
+      courseId,
+      userId,
+      lessonId,
+    );
   }
 
   @Post(':id/progress/quiz/:quizId')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة' })
-  @ApiParam({ name: 'quizId', description: 'معرّف الاختبار' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiParam({ name: 'quizId', description: 'Quiz id' })
   @ApiOperation({ summary: 'Mark a quiz as completed for a user' })
   markQuizCompleted(
     @Param('id') courseId: string,
@@ -75,8 +91,8 @@ export class EnrollmentsController {
   }
 
   @Post(':id/reviews')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة' })
-  @ApiOperation({ summary: 'إضافة أو تحديث تقييم وتعليق لدورة تدريبية' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiOperation({ summary: 'Add or update a course rating and comment' })
   addOrUpdateReview(
     @Param('id') courseId: string,
     @Body() body: AddOrUpdateCourseReviewDto,
@@ -91,15 +107,15 @@ export class EnrollmentsController {
   }
 
   @Get(':id/reviews')
-  @ApiParam({ name: 'id', description: 'معرّف الدورة' })
-  @ApiOperation({ summary: 'جلب جميع التقييمات والتعليقات لدورة تدريبية' })
+  @ApiParam({ name: 'id', description: 'Course id' })
+  @ApiOperation({ summary: 'Get all ratings and comments for a course' })
   getCourseReviews(@Param('id') courseId: string) {
     return this.enrollmentsService.getCourseReviews(courseId);
   }
 
   private ensureOwnUserScope(userId: string, currentUserId: string) {
     if (!currentUserId || userId !== currentUserId) {
-      throw new ForbiddenException('لا يمكنك الوصول إلى بيانات مستخدم آخر');
+      throw new ForbiddenException("You cannot access another user's data");
     }
   }
 }

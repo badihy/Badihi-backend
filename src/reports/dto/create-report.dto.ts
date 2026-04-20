@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsEmail,
+  IsEnum,
+  IsMongoId,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 import { ReportType } from '../schemas/report.schema';
 
 export class CreateReportDto {
@@ -31,7 +38,7 @@ export class CreateReportDto {
   @ApiPropertyOptional({
     type: String,
     format: 'binary',
-    description: 'صورة اختيارية للبلاغ',
+    description: 'Optional image attached to the report',
   })
   @IsOptional()
   @IsString()

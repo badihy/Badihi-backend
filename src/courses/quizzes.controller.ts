@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { QuizzesService } from './quizzes.service';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -13,7 +21,10 @@ export class QuizzesController {
 
   @Post()
   @Roles(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Create a new quiz inside a chapter (chapter must have no lessons)' })
+  @ApiOperation({
+    summary:
+      'Create a new quiz inside a chapter (chapter must have no lessons)',
+  })
   createQuiz(@Body() createQuizDto: CreateQuizDto) {
     return this.quizzesService.createQuiz(createQuizDto);
   }
@@ -33,7 +44,10 @@ export class QuizzesController {
   @Patch(':id')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a quiz by ID' })
-  updateQuiz(@Param('id') id: string, @Body() updateData: Partial<CreateQuizDto>) {
+  updateQuiz(
+    @Param('id') id: string,
+    @Body() updateData: Partial<CreateQuizDto>,
+  ) {
     return this.quizzesService.updateQuiz(id, updateData);
   }
 

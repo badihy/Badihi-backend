@@ -9,7 +9,6 @@ import {
   getVerifyEmailErrorPage,
   getVerifyEmailSuccessPage,
 } from './common/templates/deep-link-pages.template';
-import { getGoogleAuthTestPage as getStandaloneGoogleAuthTestPage } from './common/templates/google-auth-test.template';
 
 @Controller()
 export class AppController {
@@ -22,18 +21,6 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
-  }
-
-  @Public()
-  @Get('google-auth-test')
-  getGoogleAuthTest(@Res() res: Response) {
-    const clientId = process.env.GOOGLE_CLIENT_ID?.trim() || '';
-
-    return res.send(
-      getStandaloneGoogleAuthTestPage({
-        clientId,
-      }),
-    );
   }
 
   /**
@@ -60,7 +47,10 @@ export class AppController {
    */
   @Public()
   @Get('reset-password')
-  async showResetPasswordForm(@Query('token') token: string, @Res() res: Response) {
+  async showResetPasswordForm(
+    @Query('token') token: string,
+    @Res() res: Response,
+  ) {
     if (!token) {
       return res.status(400).send(getInvalidResetPasswordLinkPage());
     }

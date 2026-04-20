@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { CreateReportDto } from './dto/create-report.dto';
@@ -11,10 +15,11 @@ import { ReportQueryDto } from './dto/report-query.dto';
 @Injectable()
 export class ReportsService {
   constructor(
-    @InjectModel(Report.name) private readonly reportModel: Model<ReportDocument>,
+    @InjectModel(Report.name)
+    private readonly reportModel: Model<ReportDocument>,
     private readonly bunnyService: BunnyService,
     private readonly paginationProvider: PaginationProvider,
-  ) { }
+  ) {}
 
   async create(createReportDto: CreateReportDto, file?: any) {
     let imageUrl = createReportDto.imageUrl;
@@ -22,7 +27,9 @@ export class ReportsService {
       try {
         imageUrl = await this.bunnyService.uploadFile(file);
       } catch (error: any) {
-        throw new BadRequestException(`فشل رفع صورة البلاغ: ${error?.message || ''}`);
+        throw new BadRequestException(
+          `Failed to upload report image: ${error?.message || ''}`,
+        );
       }
     }
 
@@ -50,7 +57,7 @@ export class ReportsService {
   async findOne(id: string) {
     const report = await this.reportModel.findById(id);
     if (!report) {
-      throw new NotFoundException('البلاغ غير موجود');
+      throw new NotFoundException('Report not found');
     }
     return report;
   }
@@ -63,7 +70,7 @@ export class ReportsService {
     );
 
     if (!updatedReport) {
-      throw new NotFoundException('البلاغ غير موجود');
+      throw new NotFoundException('Report not found');
     }
 
     return updatedReport;
@@ -72,9 +79,9 @@ export class ReportsService {
   async remove(id: string) {
     const deletedReport = await this.reportModel.findByIdAndDelete(id);
     if (!deletedReport) {
-      throw new NotFoundException('البلاغ غير موجود');
+      throw new NotFoundException('Report not found');
     }
 
-    return { message: 'تم حذف البلاغ بنجاح' };
+    return { message: 'Report deleted successfully' };
   }
 }

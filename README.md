@@ -59,17 +59,17 @@ $ npm run test:cov
 
 ## Google Login API
 
-Google login is handled through Firebase ID tokens.
+Google login is handled through the mobile ID token endpoint.
 
 ### Endpoint
 
-- `POST /api/auth/google-login` (alias of `POST /api/auth/firebase-login`)
+- `POST /api/auth/mobile`
 
 ### Request body
 
 ```json
 {
-  "idToken": "FIREBASE_ID_TOKEN_FROM_CLIENT"
+  "idToken": "GOOGLE_ID_TOKEN_FROM_MOBILE_APP"
 }
 ```
 
@@ -77,37 +77,35 @@ Google login is handled through Firebase ID tokens.
 
 ```json
 {
-  "token": "ACCESS_TOKEN",
+  "accessToken": "ACCESS_TOKEN",
   "refreshToken": "REFRESH_TOKEN",
   "user": {
-    "_id": "USER_ID",
-    "username": "username123",
+    "id": "USER_ID",
     "email": "user@gmail.com",
+    "username": "username123",
+    "phone": "201234567890",
+    "name": "User Name",
     "profileImage": "https://...",
-    "firebaseUid": "firebase_uid"
+    "role": "user"
   }
 }
 ```
 
-### Frontend flow (Flutter/Web/React Native)
+### Frontend flow
 
-1. Sign in with Google using Firebase SDK on the client.
-2. Read Firebase ID token from the signed-in user.
-3. Send the token to backend:
+1. Sign in with Google in the mobile app.
+2. Read the Google `idToken` from the signed-in user.
+3. Send the token to the backend:
 
 ```bash
-curl -X POST http://localhost:3000/api/auth/google-login \
+curl -X POST http://localhost:3001/api/auth/mobile \
   -H "Content-Type: application/json" \
-  -d "{\"idToken\":\"YOUR_FIREBASE_ID_TOKEN\"}"
+  -d "{\"idToken\":\"YOUR_GOOGLE_ID_TOKEN\"}"
 ```
 
 ### Required backend env vars
 
-These are required for Firebase Admin verification:
-
-- `FIREBASE_PROJECT_ID`
-- `FIREBASE_CLIENT_EMAIL`
-- `FIREBASE_PRIVATE_KEY` (newline characters escaped as `\n` in `.env`)
+- `GOOGLE_CLIENT_ID`
 
 ## Deployment
 

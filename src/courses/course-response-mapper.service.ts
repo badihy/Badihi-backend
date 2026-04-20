@@ -88,8 +88,16 @@ export class CourseResponseMapperService {
       updatedAt: chapter.updatedAt,
     };
 
-    if (chapter.lessons && Array.isArray(chapter.lessons) && chapter.lessons.length > 0) {
-      if (chapter.lessons[0] && typeof chapter.lessons[0] === 'object' && chapter.lessons[0].title) {
+    if (
+      chapter.lessons &&
+      Array.isArray(chapter.lessons) &&
+      chapter.lessons.length > 0
+    ) {
+      if (
+        chapter.lessons[0] &&
+        typeof chapter.lessons[0] === 'object' &&
+        chapter.lessons[0].title
+      ) {
         mapped.lessons = chapter.lessons.map((lesson: any) =>
           this.mapLessonResponse(lesson, populateLevel),
         );
@@ -98,7 +106,9 @@ export class CourseResponseMapperService {
         populateLevel === PopulateLevel.SLIDES ||
         populateLevel === PopulateLevel.FULL
       ) {
-        mapped.lessonIds = chapter.lessons.map((lesson: any) => lesson._id || lesson);
+        mapped.lessonIds = chapter.lessons.map(
+          (lesson: any) => lesson._id || lesson,
+        );
       }
     }
 
@@ -129,11 +139,14 @@ export class CourseResponseMapperService {
     };
 
     if (
-      (populateLevel === PopulateLevel.SLIDES || populateLevel === PopulateLevel.FULL) &&
+      (populateLevel === PopulateLevel.SLIDES ||
+        populateLevel === PopulateLevel.FULL) &&
       lesson.slides &&
       Array.isArray(lesson.slides)
     ) {
-      mapped.slides = lesson.slides.map((slide: any) => this.mapSlideResponse(slide));
+      mapped.slides = lesson.slides.map((slide: any) =>
+        this.mapSlideResponse(slide),
+      );
     } else if (lesson.slides && Array.isArray(lesson.slides)) {
       mapped.slideIds = lesson.slides.map((slide: any) => slide._id || slide);
     }
@@ -161,7 +174,9 @@ export class CourseResponseMapperService {
   private mapQuizResponse(quiz: any): any {
     const questions =
       quiz.questions && Array.isArray(quiz.questions)
-        ? [...quiz.questions].sort((a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0))
+        ? [...quiz.questions].sort(
+            (a: any, b: any) => (a.orderIndex || 0) - (b.orderIndex || 0),
+          )
         : quiz.questions;
 
     return {

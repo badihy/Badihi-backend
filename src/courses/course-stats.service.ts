@@ -2,14 +2,20 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Enrollment, EnrollmentDocument } from './schemas/enrollment.schema';
-import { Bookmark, BookmarkDocument } from '../bookmarks/schemas/bookmark.schema';
+import {
+  Bookmark,
+  BookmarkDocument,
+} from '../bookmarks/schemas/bookmark.schema';
 
 export type CourseStatsMap = Record<
   string,
   { enrollmentsCount: number; averageRating: number | null }
 >;
 
-export type CourseReviewsMap = Record<string, { reviews: any[]; reviewsCount: number }>;
+export type CourseReviewsMap = Record<
+  string,
+  { reviews: any[]; reviewsCount: number }
+>;
 
 @Injectable()
 export class CourseStatsService {
@@ -20,7 +26,10 @@ export class CourseStatsService {
     private readonly bookmarkModel: Model<BookmarkDocument>,
   ) {}
 
-  async getBookmarkedCourseIdsSet(userId: string | undefined, courseIds: any[]) {
+  async getBookmarkedCourseIdsSet(
+    userId: string | undefined,
+    courseIds: any[],
+  ) {
     const set = new Set<string>();
     if (!userId || !courseIds?.length) {
       return set;

@@ -15,7 +15,9 @@ describe('BookmarksController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BookmarksController],
-      providers: [{ provide: BookmarksService, useValue: bookmarksServiceMock }],
+      providers: [
+        { provide: BookmarksService, useValue: bookmarksServiceMock },
+      ],
     }).compile();
 
     controller = module.get<BookmarksController>(BookmarksController);

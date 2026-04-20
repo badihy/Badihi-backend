@@ -17,7 +17,9 @@ describe('EnrollmentsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [EnrollmentsController],
-      providers: [{ provide: EnrollmentsService, useValue: enrollmentsServiceMock }],
+      providers: [
+        { provide: EnrollmentsService, useValue: enrollmentsServiceMock },
+      ],
     }).compile();
 
     controller = module.get<EnrollmentsController>(EnrollmentsController);
@@ -35,9 +37,9 @@ describe('EnrollmentsController', () => {
   });
 
   it('blocks reading another user progress', async () => {
-    expect(() => controller.getCourseProgress('course-1', 'user-2', 'user-1')).toThrow(
-      ForbiddenException,
-    );
+    expect(() =>
+      controller.getCourseProgress('course-1', 'user-2', 'user-1'),
+    ).toThrow(ForbiddenException);
     expect(enrollmentsServiceMock.getEnrollment).not.toHaveBeenCalled();
   });
 

@@ -1,4 +1,11 @@
-import { Body, Controller, ForbiddenException, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Get,
+  Param,
+  Post,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CertificateService } from './certificate.service';
 import { IssueCertificateDto } from './dto/issue-certificate.dto';
@@ -9,7 +16,7 @@ import { Public } from '../auth/decorators/public.decorator';
 @ApiBearerAuth('JWT-access')
 @Controller('certificate')
 export class CertificateController {
-  constructor(private readonly certificateService: CertificateService) { }
+  constructor(private readonly certificateService: CertificateService) {}
 
   @Post('issue')
   @ApiOperation({ summary: 'Issue certificate after course completion' })
@@ -28,7 +35,10 @@ export class CertificateController {
 
   @Get('user/:userId')
   @ApiOperation({ summary: 'Get all certificates for a user' })
-  findByUser(@Param('userId') userId: string, @CurrentUser('id') currentUserId: string) {
+  findByUser(
+    @Param('userId') userId: string,
+    @CurrentUser('id') currentUserId: string,
+  ) {
     this.ensureOwnUserScope(userId, currentUserId);
     return this.certificateService.findByUser(userId);
   }
@@ -48,7 +58,7 @@ export class CertificateController {
 
   private ensureOwnUserScope(userId: string, currentUserId: string) {
     if (!currentUserId || userId !== currentUserId) {
-      throw new ForbiddenException('لا يمكنك الوصول إلى بيانات مستخدم آخر');
+      throw new ForbiddenException("You cannot access another user's data");
     }
   }
 }

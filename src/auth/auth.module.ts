@@ -22,7 +22,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
       }),
       inject: [ConfigService],
     }),
-    forwardRef(() => UserModule)
+    forwardRef(() => UserModule),
   ],
   controllers: [AuthController],
   providers: [
@@ -34,4 +34,4 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
   ],
   exports: [AuthService, JwtAuthGuard],
 })
-export class AuthModule { }
+export class AuthModule {}

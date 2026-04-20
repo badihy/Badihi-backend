@@ -1,80 +1,83 @@
-import { Prop, Schema, SchemaFactory } from "@nestjs/mongoose";
-import mongoose, { Document } from "mongoose";
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import mongoose, { Document } from 'mongoose';
 import { UserRole } from '../../auth/enums/user-role.enum';
 
 @Schema({ timestamps: true })
 export class User {
-    @Prop({
-        unique: true,
-    })
-    username: string;
+  @Prop({
+    unique: true,
+  })
+  username: string;
 
-    @Prop({
-        required: true,
-        type: String,
-    })
-    fullName: string;
+  @Prop({
+    required: true,
+    type: String,
+  })
+  fullName: string;
 
-    @Prop({
-        required: true,
-        unique: true,
-    })
-    email: string;
+  @Prop({
+    required: true,
+    unique: true,
+  })
+  email: string;
 
-    @Prop({
-        required: false,
-    })
-    password: string;
+  @Prop({
+    required: false,
+  })
+  password: string;
 
-    @Prop({
-        required: false,
-    })
-    phone: string;
+  @Prop({
+    required: false,
+  })
+  phone: string;
 
-    @Prop({
-        required: false,
-    })
-    profileImage?: string;
+  @Prop({
+    required: false,
+  })
+  profileImage?: string;
 
-    @Prop({
-        default: false,
-    })
-    isVerified: boolean;
+  @Prop({
+    default: false,
+  })
+  isVerified: boolean;
 
-    @Prop({
-        type: String,
-        enum: UserRole,
-        default: UserRole.USER,
-    })
-    role: UserRole;
+  @Prop({
+    type: String,
+    enum: UserRole,
+    default: UserRole.USER,
+  })
+  role: UserRole;
 
-    @Prop({ type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }], default: [] })
-    enrolledCourses?: mongoose.Types.ObjectId[];
+  @Prop({
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Course' }],
+    default: [],
+  })
+  enrolledCourses?: mongoose.Types.ObjectId[];
 
-    @Prop({
-        required: false,
-    })
-    refreshToken?: string;
+  @Prop({
+    required: false,
+  })
+  refreshToken?: string;
 
-    @Prop({
-        required: false,
-    })
-    resetPasswordToken?: string;
+  @Prop({
+    required: false,
+  })
+  resetPasswordToken?: string;
 
-    @Prop({
-        required: false,
-    })
-    resetPasswordExpires?: Date;
+  @Prop({
+    required: false,
+  })
+  resetPasswordExpires?: Date;
 
-    @Prop({
-        required: false,
-    })
-    verificationToken?: string;
+  @Prop({
+    required: false,
+  })
+  verificationToken?: string;
 
-    @Prop({
-        required: false,
-    })
-    verificationTokenExpires?: Date;
+  @Prop({
+    required: false,
+  })
+  verificationTokenExpires?: Date;
 }
 export type UserDocument = Document & User;
 export const UserSchema = SchemaFactory.createForClass(User);

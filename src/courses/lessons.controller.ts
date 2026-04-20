@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -33,7 +41,10 @@ export class LessonsController {
   @Patch(':id')
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Update a lesson by ID' })
-  updateLesson(@Param('id') id: string, @Body() updateData: Partial<CreateLessonDto>) {
+  updateLesson(
+    @Param('id') id: string,
+    @Body() updateData: Partial<CreateLessonDto>,
+  ) {
     return this.lessonsService.updateLesson(id, updateData);
   }
 

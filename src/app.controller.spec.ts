@@ -49,29 +49,8 @@ describe('AppController', () => {
 
     expect(authServiceMock.verifyEmail).toHaveBeenCalledWith('token-123');
     expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('تم التحقق من البريد الإلكتروني بنجاح!'),
+      expect.stringContaining('Email verified successfully!'),
     );
-  });
-
-  it('renders the google auth test page with the configured client id', async () => {
-    const res = createResponseMock();
-    const previousClientId = process.env.GOOGLE_CLIENT_ID;
-
-    process.env.GOOGLE_CLIENT_ID = 'test-google-client-id';
-
-    appController.getGoogleAuthTest(res as any);
-
-    expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('test-google-client-id'),
-    );
-    expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('Google Auth End-to-End Test'),
-    );
-    expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('/api/auth/mobile/auth-code'),
-    );
-
-    process.env.GOOGLE_CLIENT_ID = previousClientId;
   });
 
   it('returns the reset-password page wired to the prefixed API route', async () => {
@@ -80,7 +59,7 @@ describe('AppController', () => {
     await appController.showResetPasswordForm('token-123', res as any);
 
     expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining("/api/auth/reset-password"),
+      expect.stringContaining('/api/auth/reset-password'),
     );
   });
 
@@ -91,7 +70,7 @@ describe('AppController', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('الرابط غير صالح'),
+      expect.stringContaining('Invalid link'),
     );
   });
 });

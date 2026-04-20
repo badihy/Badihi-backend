@@ -25,11 +25,13 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    forbidNonWhitelisted: false,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: false,
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
 
@@ -44,7 +46,7 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description:
-          'استخدم refresh token في ترويسة Authorization: Bearer <refresh_token> (مطلوب لـ GET /auth/refresh).',
+          'Use the refresh token in the Authorization header as Bearer <refresh_token> for GET /auth/refresh.',
         in: 'header',
       },
       'JWT-refresh',
@@ -55,7 +57,7 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         description:
-          'استخدم access token في ترويسة Authorization: Bearer <access_token> (مثلاً من تسجيل الدخول).',
+          'Use the access token in the Authorization header as Bearer <access_token>, for example after login.',
         in: 'header',
       },
       'JWT-access',
