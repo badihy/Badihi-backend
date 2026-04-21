@@ -7,13 +7,7 @@
             "namespace": "android_app",
             "package_name": "com.badihi.app",
             "sha256_cert_fingerprints": [
-                "14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5"
-            ],
-            "paths": [
-                "/verify-email",
-                "/verify-email/*",
-                "/reset-password",
-                "/reset-password/*"
+                "CD:69:44:3A:87:51:15:C4:00:DD:00:EB:28:05:C1:2C:8A:31:5B:CE:E8:B3:1D:2A:33:64:E2:D5:CD:8B:E5:85"
             ]
         }
     }

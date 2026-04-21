@@ -282,7 +282,8 @@ export function getResetPasswordPage(token: string): string {
 
         function openApp() {
           const customScheme = 'badihi://reset-password?token=${encodedToken}';
-          const intentUrl = 'intent://reset-password?token=${encodedToken}#Intent;scheme=badihi;package=com.badihi.app;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.badihi.app;end';
+          const fallbackUrl = 'https://api.badihy.com/reset-password?token=${encodedToken}';
+          const intentUrl = 'intent://api.badihy.com/reset-password?token=${encodedToken}#Intent;scheme=https;package=com.badihi.app;S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
           const isAndroid = /Android/i.test(navigator.userAgent);
 
           if (isAndroid) {

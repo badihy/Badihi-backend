@@ -23,6 +23,11 @@ async function bootstrap() {
       { path: 'verify-email', method: RequestMethod.GET },
       { path: 'reset-password', method: RequestMethod.GET },
       { path: '.well-known', method: RequestMethod.GET },
+      { path: '.well-known/assetlinks.json', method: RequestMethod.GET },
+      {
+        path: '.well-known/apple-app-site-association',
+        method: RequestMethod.GET,
+      },
     ],
   });
   app.enableCors({
