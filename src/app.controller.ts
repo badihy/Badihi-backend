@@ -23,6 +23,50 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  @Public()
+  @Get('.well-known/assetlinks.json')
+  getAndroidAssetLinks(@Res() res: Response) {
+    return res
+      .type('application/json')
+      .set('Cache-Control', 'public, max-age=3600')
+      .send([
+        {
+          relation: ['delegate_permission/common.handle_all_urls'],
+          target: {
+            namespace: 'android_app',
+            package_name: 'com.badihi.app',
+            sha256_cert_fingerprints: [
+              '14:6D:E9:83:C5:73:06:50:D8:EE:B9:95:2F:34:FC:64:16:A0:83:42:E6:1D:BE:A8:8A:04:96:B2:3F:CF:44:E5',
+            ],
+          },
+        },
+      ]);
+  }
+
+  @Public()
+  @Get('.well-known/apple-app-site-association')
+  getAppleAppSiteAssociation(@Res() res: Response) {
+    return res
+      .type('application/json')
+      .set('Cache-Control', 'public, max-age=3600')
+      .send({
+        applinks: {
+          apps: [],
+          details: [
+            {
+              appID: 'TeamID.com.badihi.app',
+              paths: [
+                '/verify-email',
+                '/verify-email/*',
+                '/reset-password',
+                '/reset-password/*',
+              ],
+            },
+          ],
+        },
+      });
+  }
+
   /**
    * Deep link endpoint for email verification
    * This endpoint is called when user clicks verification link in email
