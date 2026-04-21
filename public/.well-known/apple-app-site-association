@@ -4,7 +4,12 @@
         "details": [
             {
                 "appID": "TeamID.com.badihi.app",
-                "paths": [ "/verify-email/*" ]
+                "paths": [
+                    "/verify-email",
+                    "/verify-email/*",
+                    "/reset-password",
+                    "/reset-password/*"
+                ]
             }
         ]
     }

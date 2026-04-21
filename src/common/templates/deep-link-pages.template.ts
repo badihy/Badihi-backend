@@ -174,6 +174,9 @@ export function getInvalidResetPasswordLinkPage(): string {
 }
 
 export function getResetPasswordPage(token: string): string {
+  const encodedToken = encodeURIComponent(token);
+  const tokenJson = JSON.stringify(token);
+
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -218,6 +221,19 @@ export function getResetPasswordPage(token: string): string {
         button:hover {
           background-color: #4527a0;
         }
+        .spinner {
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #5e35b1;
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 20px;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
         .message {
           text-align: center;
           padding: 15px;
@@ -246,6 +262,7 @@ export function getResetPasswordPage(token: string): string {
     <body>
       <div class="container">
         <h1>Reset Password</h1>
+        <div class="spinner"></div>
         <div id="message" class="message"></div>
         <form id="resetForm" onsubmit="handleSubmit(event)">
           <input type="hidden" id="token" value="${token}">
@@ -256,9 +273,33 @@ export function getResetPasswordPage(token: string): string {
         <p class="info">If you are using the mobile app, it may open automatically.</p>
       </div>
       <script>
+        let appOpened = false;
+        const resetToken = ${tokenJson};
+
+        window.addEventListener('blur', function() {
+          appOpened = true;
+        });
+
+        function openApp() {
+          const customScheme = 'badihi://reset-password?token=${encodedToken}';
+          const intentUrl = 'intent://reset-password?token=${encodedToken}#Intent;scheme=badihi;package=com.badihi.app;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.badihi.app;end';
+          const isAndroid = /Android/i.test(navigator.userAgent);
+
+          if (isAndroid) {
+            window.location.href = intentUrl;
+            return;
+          }
+
+          window.location.href = customScheme;
+        }
+
+        window.onload = function() {
+          setTimeout(openApp, 300);
+        };
+
         async function handleSubmit(event) {
           event.preventDefault();
-          const token = document.getElementById('token').value;
+          const token = resetToken || document.getElementById('token').value;
           const newPassword = document.getElementById('newPassword').value;
           const confirmPassword = document.getElementById('confirmPassword').value;
           const messageDiv = document.getElementById('message');

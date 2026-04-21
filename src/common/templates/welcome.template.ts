@@ -1,190 +1,105 @@
 export const getWelcomeEmailHtml = (name: string, link: string) => `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Badihi</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333333;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: left;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .logo-text {
-            font-weight: 700;
-            font-size: 20px;
-            color: #000;
-            margin-left: 10px;
-        }
-
-        .hero-image {
-            background-color: #f4f4f4;
-            width: 100%;
-            height: 250px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .shape-group {
-            position: relative;
-            width: 100px;
-            height: 100px;
-        }
-        .shape-1 {
-            position: absolute;
-            background-color: #9575cd;
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            top: 0;
-            left: 0;
-            transform: rotate(-15deg);
-            opacity: 0.8;
-        }
-        .shape-2 {
-            position: absolute;
-            background-color: #5e35b1;
-            width: 70px;
-            height: 70px;
-            border-radius: 12px;
-            top: 10px;
-            left: 20px;
-            transform: rotate(15deg);
-        }
-
-        .content {
-            text-align: left;
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #000;
-        }
-
-        p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        .btn-container {
-            margin-top: 30px;
-            text-align: left;
-        }
-        
-        .btn {
-            background-color: #5e35b1;
-            color: #ffffff !important;
-            text-decoration: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 16px;
-            display: inline-block;
-        }
-
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eeeeee;
-            font-size: 12px;
-            color: #888;
-            text-align: left;
-        }
-
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        
-        .social-icons {
-            margin-top: 10px;
-            text-align: left;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-start;
-        }
-    </style>
+    <title>مرحباً بك في بديهي</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div style="width: 30px; height: 30px; margin-right: 5px;">
-                <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <div class="logo-text">Badihi</div>
-        </div>
+<body style="margin:0; padding:0; background:#ffffff; direction:rtl; font-family:Tahoma, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-collapse:collapse;">
+        <tr>
+            <td align="center" style="padding:32px 12px 28px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; border-collapse:collapse;">
+                    <tr>
+                        <td align="right" dir="rtl" style="padding:0 40px 22px 40px; color:#171b24; font-size:16px; font-weight:700; line-height:20px;">
+                            <img src="https://api.badihy.com/image.png" width="26" height="18" alt="بديهي" style="display:inline-block; width:26px; height:18px; object-fit:contain; vertical-align:middle; margin-left:6px;">
+                            <span style="vertical-align:middle;">بديهي</span>
+                        </td>
+                    </tr>
 
-        <div class="hero-image">
-            <div class="shape-group">
-                <div class="shape-1"></div>
-                <div class="shape-2"></div>
-            </div>
-        </div>
+                    <tr>
+                        <td align="center" style="padding:0 40px 34px;">
+                            <table role="presentation" width="520" height="260" cellpadding="0" cellspacing="0" border="0" style="width:520px; height:260px; max-width:100%; background:#f5f5f5; border-radius:16px; border-collapse:separate;">
+                                <tr>
+                                    <td align="center" valign="middle" style="height:260px; line-height:260px;">
+                                        <img src="https://api.badihy.com/image.png" width="150" alt="بديهي" style="display:inline-block; width:150px; max-width:150px; height:auto; vertical-align:middle;">
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-        <div class="content">
-            <h1>Hello ${name},</h1>
-            
-            <p>We are excited to welcome you to Badihi.</p>
-            
-            <p>Your account has been created successfully, and you can now access educational content built to help you understand and apply ideas step by step.</p>
-            
-            <p>At Badihi, we focus on clear and structured learning experiences that highlight the main idea without unnecessary complexity.</p>
-            
-            <p>If you need help or run into any issue while using the app, the Badihi team is here to support you.</p>
+                    <tr>
+                        <td align="right" dir="rtl" style="padding:0 40px;">
+                            <h1 style="margin:0 0 22px; color:#171b24; font-size:28px; font-weight:800; line-height:1.5; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                مرحباً ${name}،
+                            </h1>
 
-            <div class="btn-container">
-                <a href="${link}" class="btn">Sign in</a>
-            </div>
-        </div>
+                            <p style="margin:0 0 22px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                يسعدنا انضمامك إلى بديهي.
+                            </p>
 
-        <div class="footer">
-            <p>If you received this email by mistake or have any questions about your account, please contact us.</p>
-            <p>We wish you a productive and enjoyable learning experience.</p>
-            
-            <div class="footer-logo">
-                <strong>The Badihi Team</strong>
-            </div>
+                            <p style="margin:0 0 22px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                تم إنشاء حسابك بنجاح وأصبح بإمكانك الآن الوصول إلى محتوى تعليمي يساعدك على الفهم والتطبيق، خطوة بخطوة.
+                            </p>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                <div class="logo-text" style="font-size: 16px; display: flex; align-items: center; margin-left: 0;">
-                    <div style="width: 20px; height: 20px; margin-right: 5px;">
-                        <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
-                    </div>
-                    Badihi
-                </div>
-                <div class="social-icons"></div>
-           </div>
-        </div>
-    </div>
+                            <p style="margin:0 0 22px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                في بديهي نحرص على تقديم محتوى مختصر ومنظم يركّز على الفكرة الأساسية دون تعقيد حتى تتعلم بكفاءة وتستفيد مما تتعلمه فعلياً.
+                            </p>
+
+                            <p style="margin:0 0 30px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                إذا احتجت أي مساعدة أو واجهت أي مشكلة أثناء استخدام التطبيق، فريق بديهي موجود لدعمك في أي وقت.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="right" style="padding:0 40px 38px;">
+                            <a href="${link}" style="display:inline-block; background:#5e35b1; color:#ffffff; text-decoration:none; border-radius:6px; padding:12px 24px; font-size:16px; font-weight:700; line-height:20px; font-family:Tahoma, Arial, sans-serif;">
+                                تسجيل الدخول
+                            </a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:0 40px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #eeeeee; border-collapse:collapse;">
+                                <tr>
+                                    <td align="right" dir="rtl" style="padding-top:22px;">
+                                        <p style="margin:0 0 14px; color:#5f636d; font-size:12px; line-height:1.9; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                            إذا وصلك هذا البريد الإلكتروني عن طريق الخطأ أو كانت لديك أي استفسارات تتعلق بحسابك، لا تتردد في التواصل معنا.
+                                        </p>
+                                        <p style="margin:0 0 14px; color:#5f636d; font-size:12px; line-height:1.9; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                            مع تمنياتنا لك بتجربة تعليمية موفقة.
+                                        </p>
+                                        <p style="margin:0; color:#171b24; font-size:13px; font-weight:700; line-height:1.9; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                            فريق بديهي
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="padding-top:28px;">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                                            <tr>
+                                                <td align="right" dir="rtl" style="color:#171b24; font-size:16px; font-weight:700; line-height:22px; font-family:Tahoma, Arial, sans-serif;">
+                                                    <img src="https://api.badihy.com/image.png" width="30" height="20" alt="بديهي" style="display:inline-block; width:30px; height:20px; object-fit:contain; vertical-align:middle; margin-left:7px;">
+                                                    <span style="vertical-align:middle;">بديهي</span>
+                                                </td>
+                                                <td align="left" dir="ltr" style="color:#a5a8ae; font-size:14px; line-height:22px; font-family:Arial, sans-serif;">
+                                                    ○&nbsp;&nbsp;○&nbsp;&nbsp;○&nbsp;&nbsp;○
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 `;

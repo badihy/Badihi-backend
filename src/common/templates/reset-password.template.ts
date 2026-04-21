@@ -1,190 +1,108 @@
 export const getResetPasswordEmailHtml = (name: string, link: string) => `
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Your Password - Badihi</title>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background-color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333333;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            text-align: left;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-
-        .logo-text {
-            font-weight: 700;
-            font-size: 20px;
-            color: #000;
-            margin-left: 10px;
-        }
-
-        .hero-image {
-            background-color: #f4f4f4;
-            width: 100%;
-            height: 250px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 30px;
-            position: relative;
-        }
-
-        .shape-group {
-            position: relative;
-            width: 100px;
-            height: 100px;
-        }
-        .shape-1 {
-            position: absolute;
-            background-color: #9575cd;
-            width: 60px;
-            height: 60px;
-            border-radius: 10px;
-            top: 0;
-            left: 0;
-            transform: rotate(-15deg);
-            opacity: 0.8;
-        }
-        .shape-2 {
-            position: absolute;
-            background-color: #5e35b1;
-            width: 70px;
-            height: 70px;
-            border-radius: 12px;
-            top: 10px;
-            left: 20px;
-            transform: rotate(15deg);
-        }
-
-        .content {
-            text-align: left;
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 15px;
-            color: #000;
-        }
-
-        p {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #555;
-            margin-bottom: 20px;
-        }
-
-        .btn-container {
-            margin-top: 30px;
-            text-align: left;
-        }
-        
-        .btn {
-            background-color: #5e35b1;
-            color: #ffffff !important;
-            text-decoration: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 16px;
-            display: inline-block;
-        }
-
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #eeeeee;
-            font-size: 12px;
-            color: #888;
-            text-align: left;
-        }
-
-        .footer-logo {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            margin-top: 20px;
-            margin-bottom: 10px;
-        }
-        
-        .social-icons {
-            margin-top: 10px;
-            text-align: left;
-            display: flex;
-            gap: 10px;
-            justify-content: flex-start;
-        }
-    </style>
+    <title>إعادة تعيين كلمة المرور - بديهي</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div style="width: 30px; height: 30px; margin-right: 5px;">
-                <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
-            </div>
-            <div class="logo-text">Badihi</div>
-        </div>
+<body style="margin:0; padding:0; background:#ffffff; direction:rtl; font-family:Tahoma, Arial, sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff; border-collapse:collapse;">
+        <tr>
+            <td align="center" style="padding:0 12px 34px;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px; max-width:600px; background:#ffffff; border-collapse:collapse;">
+                    <tr>
+                        <td align="right" dir="rtl" style="padding:0 28px 22px; color:#171b24; font-size:16px; font-weight:700; line-height:20px; font-family:Tahoma, Arial, sans-serif;">
+                            <img src="https://api.badihy.com/image.png" width="28" height="18" alt="بديهي" style="display:inline-block; width:28px; height:18px; object-fit:contain; vertical-align:middle; margin-left:6px;">
+                            <span style="vertical-align:middle;">بديهي</span>
+                        </td>
+                    </tr>
 
-        <div class="hero-image">
-            <div class="shape-group">
-                <div class="shape-1"></div>
-                <div class="shape-2"></div>
-            </div>
-        </div>
+                    <tr>
+                        <td align="center" style="padding:0 28px 34px;">
+                            <table role="presentation" width="520" height="260" cellpadding="0" cellspacing="0" border="0" style="width:520px; height:260px; max-width:100%; background:#f5f5f5; border-radius:14px; border-collapse:separate;">
+                                <tr>
+                                    <td align="center" valign="middle" style="height:260px; line-height:260px;">
+                                        <img src="https://api.badihy.com/image.png" width="150" alt="بديهي" style="display:inline-block; width:150px; max-width:150px; height:auto; vertical-align:middle;">
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
 
-        <div class="content">
-            <h1>Hello ${name},</h1>
-            
-            <p>We received a request to reset the password for your Badihi account.</p>
-            
-            <p>You can change your password by clicking the button below. This link is valid for one hour only.</p>
-            
-            <div class="btn-container">
-                <a href="${link}" class="btn">Reset password</a>
-            </div>
-            
-            <p style="margin-top: 30px; font-size: 14px; color: #777;">
-                If you did not request a password reset, you can safely ignore this email.
-            </p>
-        </div>
+                    <tr>
+                        <td align="right" dir="rtl" style="padding:0 58px; color:#171b24; font-family:Tahoma, Arial, sans-serif;">
+                            <h1 style="margin:0 0 24px; color:#171b24; font-size:28px; font-weight:800; line-height:1.4; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                مرحباً ${name}،
+                            </h1>
 
-        <div class="footer">
-            <p>If you have any questions, feel free to contact us.</p>
-            <p>We wish you a safe and smooth experience.</p>
-            
-            <div class="footer-logo">
-                <strong>The Badihi Team</strong>
-            </div>
+                            <p style="margin:0 0 18px; color:#5f636d; font-size:15px; line-height:2.05; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                وصلنا طلب لإعادة تعيين كلمة المرور الخاصة بحسابك على بديهي.
+                            </p>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-                <div class="logo-text" style="font-size: 16px; display: flex; align-items: center; margin-left: 0;">
-                    <div style="width: 20px; height: 20px; margin-right: 5px;">
-                        <img src="https://api.badihy.com/image.png" alt="Badihi Logo" style="width: 100%; height: 100%; object-fit: contain;">
-                    </div>
-                    Badihi
-                </div>
-                <div class="social-icons"></div>
-           </div>
-        </div>
-    </div>
+                            <p style="margin:0 0 18px; color:#5f636d; font-size:15px; line-height:2.05; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                لتعيين كلمة مرور جديدة، يرجى الضغط على الزر أدناه واتباع الخطوات المطلوبة.
+                            </p>
+
+                            <p style="margin:0 0 18px; color:#5f636d; font-size:15px; line-height:2.05; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                سيتم توجيهك إلى صفحة آمنة لإنشاء كلمة مرور جديدة.
+                            </p>
+
+                            <p style="margin:0 0 32px; color:#5f636d; font-size:15px; line-height:2.05; text-align:right; font-family:Tahoma, Arial, sans-serif;">
+                                الرابط صالح لمدة ٥ دقائق فقط حفاظاً على أمان حسابك.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td align="right" style="padding:0 58px 34px;">
+                            <a href="${link}" style="display:inline-block; background:#5e35b1; color:#ffffff; text-decoration:none; border-radius:5px; padding:13px 32px; font-size:16px; font-weight:700; line-height:20px; font-family:Tahoma, Arial, sans-serif;">
+                                إعادة تعيين كلمة المرور
+                            </a>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding:0 58px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid #eeeeee; border-collapse:collapse;">
+                                <tr>
+                                    <td align="center" dir="rtl" style="padding-top:24px; color:#171b24; font-family:Tahoma, Arial, sans-serif;">
+                                        <p style="margin:0 0 18px; color:#5f636d; font-size:13px; line-height:2; text-align:center; font-family:Tahoma, Arial, sans-serif;">
+                                            إذا وصلك هذا البريد الإلكتروني عن طريق الخطأ أو كانت لديك أي استفسارات تتعلق بحسابك، لا تتردد في التواصل معنا.
+                                        </p>
+
+                                        <p style="margin:0 0 18px; color:#5f636d; font-size:13px; line-height:2; text-align:center; font-family:Tahoma, Arial, sans-serif;">
+                                            مع تمنياتنا لك بتجربة تعليمية موفقة.
+                                        </p>
+
+                                        <p style="margin:0 0 28px; color:#171b24; font-size:13px; font-weight:700; line-height:1.8; text-align:center; font-family:Tahoma, Arial, sans-serif;">
+                                            فريق بديهي
+                                        </p>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td style="padding:0 0 24px;">
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
+                                            <tr>
+                                                <td align="right" dir="rtl" style="color:#171b24; font-size:18px; font-weight:700; line-height:22px; font-family:Tahoma, Arial, sans-serif;">
+                                                    <img src="https://api.badihy.com/image.png" width="32" height="21" alt="بديهي" style="display:inline-block; width:32px; height:21px; object-fit:contain; vertical-align:middle; margin-left:7px;">
+                                                    <span style="vertical-align:middle;">بديهي</span>
+                                                </td>
+                                                <td align="left" dir="ltr" style="color:#a5a8ae; font-size:13px; line-height:22px; font-family:Arial, sans-serif;">
+                                                    ○&nbsp;&nbsp;○&nbsp;&nbsp;○&nbsp;&nbsp;○
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>
 `;
