@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { MongoServerError } from 'mongodb';
+import { translateErrorMessage } from './arabic-error-messages';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -18,7 +19,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest();
 
     let statusCode = 500;
-    let message = 'Internal server error';
+    let message: unknown = 'Internal server error';
 
     // Handle NestJS HttpExceptions
     if (exception instanceof HttpException) {
@@ -40,16 +41,43 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message = `Duplicate value for field "${field}": "${exception.keyValue[field]}" already exists.`;
     }
 
-    // Optional: Handle other Mongoose errors here
+    // Handle common framework / parser / database errors that are not HttpException
+    else if (typeof exception?.status === 'number') {
+      statusCode = exception.status;
+      message = exception.message;
+    } else if (exception?.name === 'CastError') {
+      statusCode = 400;
+      message = 'Cast to ObjectId failed';
+    } else if (exception?.name === 'ValidationError') {
+      statusCode = 400;
+      message = 'validation failed';
+    } else if (exception instanceof SyntaxError) {
+      statusCode = 400;
+      message = 'Invalid JSON body';
+    }
 
-    this.logger.error(
-      `HTTP ${statusCode} - ${message} - ${request.method} ${request.url}`,
-      exception.stack,
-    );
+    const translatedMessage = translateErrorMessage(message, statusCode);
+    const logMessage = Array.isArray(translatedMessage)
+      ? translatedMessage.join(' | ')
+      : translatedMessage;
+
+    if (statusCode >= 500) {
+      this.logger.error(
+        `HTTP ${statusCode} - ${logMessage} - ${request.method} ${request.url}`,
+        exception.stack,
+      );
+    } else {
+      this.logger.warn(
+        `HTTP ${statusCode} - ${logMessage} - ${request.method} ${request.url}`,
+      );
+    }
 
     response.status(statusCode).json({
       status: false,
-      message,
+      message: translatedMessage,
+      statusCode,
+      path: request.url,
+      timestamp: new Date().toISOString(),
     });
   }
 }

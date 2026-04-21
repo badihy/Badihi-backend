@@ -4,6 +4,7 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { UserDocument } from '../user/schemas/user.schema';
@@ -243,11 +244,21 @@ export class AuthService {
       token,
       expires,
     );
-    await this.emailService.sendResetPasswordEmail(
-      user.email,
-      user.fullName || 'User',
-      token,
-    );
+    try {
+      await this.emailService.sendResetPasswordEmail(
+        user.email,
+        user.fullName || 'User',
+        token,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(
+        `Reset password email failed for user ${user.email}: ${message}`,
+      );
+      throw new ServiceUnavailableException(
+        'تعذر إرسال بريد إعادة تعيين كلمة المرور حالياً، يرجى المحاولة لاحقاً',
+      );
+    }
 
     return { message: 'Password reset email sent successfully' };
   }

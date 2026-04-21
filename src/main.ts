@@ -2,8 +2,14 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/exception-handlers/http-exception.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { Logger, RequestMethod, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  Logger,
+  RequestMethod,
+  ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { translateValidationErrors } from './common/exception-handlers/arabic-error-messages';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,6 +36,10 @@ async function bootstrap() {
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: false,
+      exceptionFactory: (errors) =>
+        new BadRequestException({
+          message: translateValidationErrors(errors),
+        }),
     }),
   );
   app.useGlobalFilters(new HttpExceptionFilter());
