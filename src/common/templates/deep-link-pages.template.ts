@@ -262,7 +262,6 @@ export function getResetPasswordPage(token: string): string {
     <body>
       <div class="container">
         <h1>Reset Password</h1>
-        <div class="spinner"></div>
         <div id="message" class="message"></div>
         <form id="resetForm" onsubmit="handleSubmit(event)">
           <input type="hidden" id="token" value="${token}">
@@ -282,7 +281,7 @@ export function getResetPasswordPage(token: string): string {
 
         function openApp() {
           const customScheme = 'badihi://reset-password?token=${encodedToken}';
-          const fallbackUrl = 'https://api.badihy.com/reset-password?token=${encodedToken}';
+          const fallbackUrl = 'https://api.badihy.com/reset-password?token=${encodedToken}&openAppAttempted=1';
           const intentUrl = 'intent://api.badihy.com/reset-password?token=${encodedToken}#Intent;scheme=https;package=com.badihi.app;S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
           const isAndroid = /Android/i.test(navigator.userAgent);
 
@@ -295,7 +294,12 @@ export function getResetPasswordPage(token: string): string {
         }
 
         window.onload = function() {
-          setTimeout(openApp, 300);
+          const params = new URLSearchParams(window.location.search);
+          const alreadyAttempted = params.get('openAppAttempted') === '1';
+
+          if (!alreadyAttempted) {
+            setTimeout(openApp, 300);
+          }
         };
 
         async function handleSubmit(event) {
