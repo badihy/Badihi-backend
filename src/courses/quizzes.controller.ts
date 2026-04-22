@@ -12,6 +12,7 @@ import { CreateQuizDto } from './dto/create-quiz.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Quizzes')
 @ApiBearerAuth('JWT-access')
@@ -31,14 +32,28 @@ export class QuizzesController {
 
   @Get('by-chapter/:chapterId')
   @ApiOperation({ summary: 'Get the quiz for a specific chapter' })
-  findQuizByChapter(@Param('chapterId') chapterId: string) {
-    return this.quizzesService.findQuizByChapter(chapterId);
+  findQuizByChapter(
+    @Param('chapterId') chapterId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.quizzesService.findQuizByChapter(
+      chapterId,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single quiz by ID' })
-  findOneQuiz(@Param('id') id: string) {
-    return this.quizzesService.findOneQuiz(id);
+  findOneQuiz(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.quizzesService.findOneQuiz(
+      id,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Patch(':id')

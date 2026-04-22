@@ -56,6 +56,6 @@ import { CourseQueryService } from './course-query.service';
     QuizzesService,
     EnrollmentsService,
   ],
-  exports: [CoursesService, MongooseModule], // Export MongooseModule for seeding scripts
+  exports: [CoursesService, EnrollmentsService, MongooseModule], // Export MongooseModule for seeding scripts
 })
 export class CoursesModule {}

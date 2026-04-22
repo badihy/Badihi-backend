@@ -10,6 +10,7 @@ import { CourseMediaService } from './course-media.service';
 import { CourseStatsService } from './course-stats.service';
 import { CourseResponseMapperService } from './course-response-mapper.service';
 import { CourseQueryService } from './course-query.service';
+import { EnrollmentsService } from './enrollments.service';
 
 @Injectable()
 export class CoursesService {
@@ -21,6 +22,7 @@ export class CoursesService {
     private readonly courseStatsService: CourseStatsService,
     private readonly courseResponseMapperService: CourseResponseMapperService,
     private readonly courseQueryService: CourseQueryService,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   async create(
@@ -73,6 +75,10 @@ export class CoursesService {
         userId,
         courseIds,
       );
+    const accessMap = await this.enrollmentsService.getCoursesProgressAccessMap(
+      courseIds,
+      userId,
+    );
 
     return this.courseResponseMapperService.mapCoursesResponse(
       courses,
@@ -80,6 +86,7 @@ export class CoursesService {
       statsMap,
       bookmarkedSet,
       reviewsMap,
+      accessMap,
     );
   }
 
@@ -121,6 +128,10 @@ export class CoursesService {
         course._id,
       ]);
     const isBookmarked = bookmarkedSet.has(course._id.toString());
+    const access = await this.enrollmentsService.getCourseProgressAccess(
+      course._id.toString(),
+      userId,
+    );
 
     return this.courseResponseMapperService.mapCourseResponse(
       course,
@@ -128,42 +139,43 @@ export class CoursesService {
       stats,
       isBookmarked,
       reviewsBundle,
+      access,
     );
   }
 
   /**
    * Get course with chapters only
    */
-  async findOneWithChapters(id: string): Promise<any> {
-    return this.findOne(id, PopulateLevel.CHAPTERS);
+  async findOneWithChapters(id: string, userId?: string): Promise<any> {
+    return this.findOne(id, PopulateLevel.CHAPTERS, true, userId);
   }
 
   /**
    * Get course with chapters and lessons
    */
-  async findOneWithLessons(id: string): Promise<any> {
-    return this.findOne(id, PopulateLevel.LESSONS);
+  async findOneWithLessons(id: string, userId?: string): Promise<any> {
+    return this.findOne(id, PopulateLevel.LESSONS, true, userId);
   }
 
   /**
    * Get course with chapters, lessons, and slides
    */
-  async findOneWithSlides(id: string): Promise<any> {
-    return this.findOne(id, PopulateLevel.SLIDES);
+  async findOneWithSlides(id: string, userId?: string): Promise<any> {
+    return this.findOne(id, PopulateLevel.SLIDES, true, userId);
   }
 
   /**
    * Get course with chapters and quizzes
    */
-  async findOneWithQuizzes(id: string): Promise<any> {
-    return this.findOne(id, PopulateLevel.QUIZZES);
+  async findOneWithQuizzes(id: string, userId?: string): Promise<any> {
+    return this.findOne(id, PopulateLevel.QUIZZES, true, userId);
   }
 
   /**
    * Get course with everything populated
    */
-  async findOneFull(id: string): Promise<any> {
-    return this.findOne(id, PopulateLevel.FULL);
+  async findOneFull(id: string, userId?: string): Promise<any> {
+    return this.findOne(id, PopulateLevel.FULL, true, userId);
   }
 
   async update(

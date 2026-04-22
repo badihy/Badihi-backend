@@ -8,12 +8,14 @@ import { Model } from 'mongoose';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { EnrollmentsService } from './enrollments.service';
 
 @Injectable()
 export class LessonsService {
   constructor(
     @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
     @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   /**
@@ -52,23 +54,61 @@ export class LessonsService {
   /**
    * Get all lessons for a specific chapter
    */
-  async findAllLessons(chapterId: string): Promise<Lesson[]> {
+  async findAllLessons(chapterId: string, userId?: string): Promise<any[]> {
     const chapter = await this.chapterModel.findById(chapterId).exec();
     if (!chapter) {
       throw new NotFoundException(`الفصل بالمعرف ${chapterId} غير موجود`);
     }
 
-    return this.lessonModel
+    if (userId) {
+      await this.enrollmentsService.assertChapterAccessibleById(
+        userId,
+        chapterId,
+      );
+    }
+
+    const lessons = await this.lessonModel
       .find({ chapter: chapterId })
       .sort({ orderIndex: 1 })
       .populate({ path: 'slides', options: { sort: { orderIndex: 1 } } })
       .exec();
+
+    if (!userId) {
+      return lessons;
+    }
+
+    const access = await this.enrollmentsService.getCourseProgressAccess(
+      chapter.course.toString(),
+      userId,
+    );
+    const completedLessonIds = access?.completedLessonIds ?? new Set<string>();
+    let previousLessonsCompleted = true;
+
+    return lessons.map((lesson: any) => {
+      const mapped =
+        typeof lesson.toObject === 'function' ? lesson.toObject() : lesson;
+      const lessonId = mapped._id?.toString?.() ?? '';
+      mapped.isCompleted = completedLessonIds.has(lessonId);
+      mapped.isLocked = !previousLessonsCompleted;
+
+      if (mapped.isLocked) {
+        delete mapped.slides;
+      }
+
+      previousLessonsCompleted = previousLessonsCompleted && mapped.isCompleted;
+
+      return mapped;
+    });
   }
 
   /**
    * Get a single lesson by ID
    */
-  async findOneLesson(id: string): Promise<Lesson> {
+  async findOneLesson(id: string, userId?: string): Promise<Lesson> {
+    if (userId) {
+      await this.enrollmentsService.assertLessonAccessibleById(userId, id);
+    }
+
     const lesson = await this.lessonModel
       .findById(id)
       .populate({ path: 'slides', options: { sort: { orderIndex: 1 } } })

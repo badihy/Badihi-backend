@@ -64,7 +64,7 @@ export class CoursesController {
     description: 'Filter by category ID',
   })
   async findAll(@Query('category') categoryId?: string, @Req() req?: any) {
-    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    const userId = this.getStudentUserId(req);
     return await this.coursesService.findAll(
       PopulateLevel.FULL,
       true,
@@ -138,7 +138,7 @@ export class CoursesController {
     @Query('search') search?: string,
     @Query('filter') filter?: string,
   ) {
-    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    const userId = this.getAuthenticatedUserId(req);
     return await this.coursesService.findEnrolledCourses(userId, {
       page,
       limit,
@@ -169,7 +169,7 @@ export class CoursesController {
     const populateLevel = query.populate || PopulateLevel.FULL;
     const includeCategory =
       query.includeCategory !== undefined ? query.includeCategory : true;
-    const userId = req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
+    const userId = this.getStudentUserId(req);
     return await this.coursesService.findOne(
       id,
       populateLevel,
@@ -180,26 +180,30 @@ export class CoursesController {
 
   @Get(':id/chapters')
   @ApiOperation({ summary: 'Get a course with chapters only' })
-  async findOneWithChapters(@Param('id') id: string) {
-    return await this.coursesService.findOneWithChapters(id);
+  async findOneWithChapters(@Param('id') id: string, @Req() req?: any) {
+    const userId = this.getStudentUserId(req);
+    return await this.coursesService.findOneWithChapters(id, userId);
   }
 
   @Get(':id/chapters/lessons')
   @ApiOperation({ summary: 'Get a course with chapters and lessons' })
-  async findOneWithLessons(@Param('id') id: string) {
-    return await this.coursesService.findOneWithLessons(id);
+  async findOneWithLessons(@Param('id') id: string, @Req() req?: any) {
+    const userId = this.getStudentUserId(req);
+    return await this.coursesService.findOneWithLessons(id, userId);
   }
 
   @Get(':id/chapters/lessons/slides')
   @ApiOperation({ summary: 'Get a course with chapters, lessons, and slides' })
-  async findOneWithSlides(@Param('id') id: string) {
-    return await this.coursesService.findOneWithSlides(id);
+  async findOneWithSlides(@Param('id') id: string, @Req() req?: any) {
+    const userId = this.getStudentUserId(req);
+    return await this.coursesService.findOneWithSlides(id, userId);
   }
 
   @Get(':id/chapters/quizzes')
   @ApiOperation({ summary: 'Get a course with chapters and quizzes' })
-  async findOneWithQuizzes(@Param('id') id: string) {
-    return await this.coursesService.findOneWithQuizzes(id);
+  async findOneWithQuizzes(@Param('id') id: string, @Req() req?: any) {
+    const userId = this.getStudentUserId(req);
+    return await this.coursesService.findOneWithQuizzes(id, userId);
   }
 
   @Get(':id/full')
@@ -207,7 +211,20 @@ export class CoursesController {
     summary:
       'Get a course with everything populated (chapters, lessons, slides, quizzes)',
   })
-  async findOneFull(@Param('id') id: string) {
-    return await this.coursesService.findOneFull(id);
+  async findOneFull(@Param('id') id: string, @Req() req?: any) {
+    const userId = this.getStudentUserId(req);
+    return await this.coursesService.findOneFull(id, userId);
+  }
+
+  private getStudentUserId(req?: any): string | undefined {
+    if (req?.user?.role === UserRole.ADMIN) {
+      return undefined;
+    }
+
+    return this.getAuthenticatedUserId(req);
+  }
+
+  private getAuthenticatedUserId(req?: any): string {
+    return req?.user?.id ?? req?.user?.sub ?? req?.user?._id;
   }
 }

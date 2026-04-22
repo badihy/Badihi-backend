@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PopulateLevel } from './dto/course-query.dto';
 import { CourseReviewsMap, CourseStatsMap } from './course-stats.service';
+import type { CourseProgressAccess } from './enrollments.service';
 
 @Injectable()
 export class CourseResponseMapperService {
@@ -10,6 +11,7 @@ export class CourseResponseMapperService {
     statsMap?: CourseStatsMap,
     bookmarkedSet?: Set<string>,
     reviewsMap?: CourseReviewsMap,
+    accessMap?: Record<string, CourseProgressAccess | undefined>,
   ): any[] {
     return courses.map((course) => {
       const key = course._id?.toString?.() ?? '';
@@ -19,6 +21,7 @@ export class CourseResponseMapperService {
         statsMap ? statsMap[key] : undefined,
         bookmarkedSet ? bookmarkedSet.has(key) : false,
         reviewsMap ? reviewsMap[key] : undefined,
+        accessMap ? accessMap[key] : undefined,
       );
     });
   }
@@ -29,6 +32,7 @@ export class CourseResponseMapperService {
     stats?: { enrollmentsCount?: number; averageRating?: number | null },
     isBookmarked?: boolean,
     reviewsBundle?: { reviews: any[]; reviewsCount: number },
+    access?: CourseProgressAccess,
   ): any {
     const mapped: any = {
       _id: course._id,
@@ -71,6 +75,8 @@ export class CourseResponseMapperService {
       mapped.chapters = course.chapters.map((chapter: any) =>
         this.mapChapterResponse(chapter, populateLevel),
       );
+
+      this.applySequentialLocks(mapped.chapters, access);
     }
 
     return mapped;
@@ -191,5 +197,116 @@ export class CourseResponseMapperService {
       createdAt: quiz.createdAt,
       updatedAt: quiz.updatedAt,
     };
+  }
+
+  private applySequentialLocks(
+    chapters: any[],
+    access?: CourseProgressAccess,
+  ): void {
+    if (!access) {
+      for (const chapter of chapters) {
+        this.lockChapter(chapter);
+      }
+      return;
+    }
+
+    let previousChaptersCompleted = true;
+
+    for (const chapter of chapters) {
+      const chapterIsAccessible = previousChaptersCompleted;
+      chapter.isLocked = !chapterIsAccessible;
+
+      if (!chapterIsAccessible) {
+        this.lockChapter(chapter);
+      } else {
+        this.applyLessonLocks(chapter, access);
+        this.applyQuizLock(chapter, access, false);
+      }
+
+      chapter.isCompleted = this.isChapterCompleted(chapter, access);
+      previousChaptersCompleted =
+        previousChaptersCompleted && chapter.isCompleted;
+    }
+  }
+
+  private applyLessonLocks(chapter: any, access: CourseProgressAccess): void {
+    if (!Array.isArray(chapter.lessons)) {
+      return;
+    }
+
+    let previousLessonsCompleted = true;
+    for (const lesson of chapter.lessons) {
+      const lessonId = this.toIdString(lesson._id);
+      lesson.isCompleted = access.completedLessonIds.has(lessonId);
+      lesson.isLocked = !previousLessonsCompleted;
+
+      if (lesson.isLocked) {
+        delete lesson.slides;
+        delete lesson.slideIds;
+      }
+
+      previousLessonsCompleted = previousLessonsCompleted && lesson.isCompleted;
+    }
+  }
+
+  private applyQuizLock(
+    chapter: any,
+    access: CourseProgressAccess,
+    forceLocked: boolean,
+  ): void {
+    if (!chapter.quiz) {
+      return;
+    }
+
+    const quizId = this.toIdString(chapter.quiz._id ?? chapter.quiz);
+    chapter.quiz.isCompleted = access.completedQuizIds.has(quizId);
+    chapter.quiz.isLocked = forceLocked;
+
+    if (forceLocked) {
+      delete chapter.quiz.questions;
+    }
+  }
+
+  private lockChapter(chapter: any): void {
+    chapter.isLocked = true;
+
+    if (Array.isArray(chapter.lessons)) {
+      for (const lesson of chapter.lessons) {
+        lesson.isLocked = true;
+        delete lesson.slides;
+        delete lesson.slideIds;
+      }
+    }
+
+    if (chapter.quiz) {
+      this.applyQuizLock(
+        chapter,
+        { completedLessonIds: new Set(), completedQuizIds: new Set() },
+        true,
+      );
+    }
+  }
+
+  private isChapterCompleted(
+    chapter: any,
+    access: CourseProgressAccess,
+  ): boolean {
+    if (Array.isArray(chapter.lessons) && chapter.lessons.length > 0) {
+      return chapter.lessons.every((lesson: any) =>
+        access.completedLessonIds.has(this.toIdString(lesson._id)),
+      );
+    }
+
+    if (chapter.quiz) {
+      return access.completedQuizIds.has(
+        this.toIdString(chapter.quiz._id ?? chapter.quiz),
+      );
+    }
+
+    return true;
+  }
+
+  private toIdString(value: any): string {
+    return value?._id?.toString?.() ?? value?.toString?.() ?? '';
   }
 }

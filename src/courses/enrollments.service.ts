@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
   Inject,
   forwardRef,
 } from '@nestjs/common';
@@ -10,7 +11,14 @@ import { Model } from 'mongoose';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Course, CourseDocument } from './schemas/course.schema';
 import { Enrollment, EnrollmentDocument } from './schemas/enrollment.schema';
+import { Lesson, LessonDocument } from './schemas/lesson.schema';
+import { Quiz, QuizDocument } from './schemas/quiz.schema';
 import { UserService } from '../user/user.service';
+
+export type CourseProgressAccess = {
+  completedLessonIds: Set<string>;
+  completedQuizIds: Set<string>;
+};
 
 @Injectable()
 export class EnrollmentsService {
@@ -19,6 +27,8 @@ export class EnrollmentsService {
     private enrollmentModel: Model<EnrollmentDocument>,
     @InjectModel(Course.name) private courseModel: Model<CourseDocument>,
     @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
+    @InjectModel(Lesson.name) private lessonModel: Model<LessonDocument>,
+    @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
     @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
   ) {}
@@ -150,6 +160,7 @@ export class EnrollmentsService {
     userId: string,
     lessonId: string,
   ): Promise<Enrollment> {
+    await this.assertLessonAccessible(courseId, userId, lessonId);
     return this.updateEnrollmentProgress(courseId, userId, { lessonId });
   }
 
@@ -161,7 +172,207 @@ export class EnrollmentsService {
     userId: string,
     quizId: string,
   ): Promise<Enrollment> {
+    await this.assertQuizAccessible(courseId, userId, quizId);
     return this.updateEnrollmentProgress(courseId, userId, { quizId });
+  }
+
+  async getCourseProgressAccess(
+    courseId: string,
+    userId?: string,
+  ): Promise<CourseProgressAccess | undefined> {
+    if (!userId) {
+      return undefined;
+    }
+
+    const enrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .select('completedLessons completedQuizzes')
+      .exec();
+
+    if (!enrollment) {
+      return undefined;
+    }
+
+    return this.mapEnrollmentToAccess(enrollment);
+  }
+
+  async getCoursesProgressAccessMap(
+    courseIds: any[],
+    userId?: string,
+  ): Promise<Record<string, CourseProgressAccess | undefined>> {
+    const result: Record<string, CourseProgressAccess | undefined> = {};
+    const normalizedCourseIds = courseIds
+      .map((courseId) => this.toIdString(courseId))
+      .filter(Boolean);
+
+    for (const courseId of normalizedCourseIds) {
+      result[courseId] = undefined;
+    }
+
+    if (!userId || normalizedCourseIds.length === 0) {
+      return result;
+    }
+
+    const enrollments = await this.enrollmentModel
+      .find({ course: { $in: normalizedCourseIds }, user: userId })
+      .select('course completedLessons completedQuizzes')
+      .exec();
+
+    for (const enrollment of enrollments) {
+      const courseId = this.toIdString(enrollment.course);
+      if (courseId) {
+        result[courseId] = this.mapEnrollmentToAccess(enrollment);
+      }
+    }
+
+    return result;
+  }
+
+  async assertChapterAccessibleById(
+    userId: string,
+    chapterId: string,
+  ): Promise<void> {
+    const chapter = await this.chapterModel.findById(chapterId).exec();
+    if (!chapter) {
+      throw new NotFoundException(`الفصل بالمعرف ${chapterId} غير موجود`);
+    }
+
+    await this.assertChapterAccessible(
+      this.toIdString(chapter.course),
+      userId,
+      chapterId,
+    );
+  }
+
+  async assertLessonAccessibleById(
+    userId: string,
+    lessonId: string,
+  ): Promise<void> {
+    const lesson = await this.lessonModel.findById(lessonId).exec();
+    if (!lesson) {
+      throw new NotFoundException(`الدرس بالمعرف ${lessonId} غير موجود`);
+    }
+
+    const chapter = await this.chapterModel.findById(lesson.chapter).exec();
+    if (!chapter) {
+      throw new NotFoundException('الفصل المرتبط بهذا الدرس غير موجود');
+    }
+
+    await this.assertLessonAccessible(
+      this.toIdString(chapter.course),
+      userId,
+      lessonId,
+    );
+  }
+
+  async assertQuizAccessibleById(
+    userId: string,
+    quizId: string,
+  ): Promise<void> {
+    const quiz = await this.quizModel.findById(quizId).exec();
+    if (!quiz) {
+      throw new NotFoundException(`الاختبار بالمعرف ${quizId} غير موجود`);
+    }
+
+    const chapter = await this.chapterModel.findById(quiz.chapter).exec();
+    if (!chapter) {
+      throw new NotFoundException('الفصل المرتبط بهذا الاختبار غير موجود');
+    }
+
+    await this.assertQuizAccessible(
+      this.toIdString(chapter.course),
+      userId,
+      quizId,
+    );
+  }
+
+  async assertChapterAccessible(
+    courseId: string,
+    userId: string,
+    chapterId: string,
+  ): Promise<void> {
+    const enrollment = await this.findEnrollmentOrThrow(courseId, userId);
+    const chapters = await this.getCourseChaptersForProgress(courseId);
+    const targetIndex = chapters.findIndex((chapter: any) =>
+      this.idsEqual(chapter._id, chapterId),
+    );
+
+    if (targetIndex === -1) {
+      throw new NotFoundException(`الفصل بالمعرف ${chapterId} غير موجود`);
+    }
+
+    const access = this.mapEnrollmentToAccess(enrollment);
+    for (const chapter of chapters.slice(0, targetIndex)) {
+      if (!this.isChapterCompleted(chapter, access)) {
+        throw new ForbiddenException(
+          'يجب إكمال الفصل السابق قبل فتح هذا الفصل',
+        );
+      }
+    }
+  }
+
+  async assertLessonAccessible(
+    courseId: string,
+    userId: string,
+    lessonId: string,
+  ): Promise<void> {
+    const enrollment = await this.findEnrollmentOrThrow(courseId, userId);
+    const chapters = await this.getCourseChaptersForProgress(courseId);
+    const access = this.mapEnrollmentToAccess(enrollment);
+
+    for (const chapter of chapters) {
+      const lessons = this.getChapterLessons(chapter);
+      const lessonIndex = lessons.findIndex((lesson: any) =>
+        this.idsEqual(lesson._id, lessonId),
+      );
+
+      if (lessonIndex === -1) {
+        if (!this.isChapterCompleted(chapter, access)) {
+          throw new ForbiddenException(
+            'يجب إكمال الفصل السابق قبل فتح هذا الدرس',
+          );
+        }
+        continue;
+      }
+
+      for (const previousLesson of lessons.slice(0, lessonIndex)) {
+        if (
+          !access.completedLessonIds.has(this.toIdString(previousLesson._id))
+        ) {
+          throw new ForbiddenException(
+            'يجب إكمال الدرس السابق قبل فتح هذا الدرس',
+          );
+        }
+      }
+
+      return;
+    }
+
+    throw new NotFoundException(`الدرس بالمعرف ${lessonId} غير موجود`);
+  }
+
+  async assertQuizAccessible(
+    courseId: string,
+    userId: string,
+    quizId: string,
+  ): Promise<void> {
+    const enrollment = await this.findEnrollmentOrThrow(courseId, userId);
+    const chapters = await this.getCourseChaptersForProgress(courseId);
+    const access = this.mapEnrollmentToAccess(enrollment);
+
+    for (const chapter of chapters) {
+      if (chapter.quiz && this.idsEqual(this.getItemId(chapter.quiz), quizId)) {
+        return;
+      }
+
+      if (!this.isChapterCompleted(chapter, access)) {
+        throw new ForbiddenException(
+          'يجب إكمال الفصل السابق قبل فتح هذا الاختبار',
+        );
+      }
+    }
+
+    throw new NotFoundException(`الاختبار بالمعرف ${quizId} غير موجود`);
   }
 
   /**
@@ -180,19 +391,22 @@ export class EnrollmentsService {
     }
 
     let isUpdated = false;
+    const completedLessonIds = new Set(
+      enrollment.completedLessons.map((lessonId) => this.toIdString(lessonId)),
+    );
+    const completedQuizIds = new Set(
+      enrollment.completedQuizzes.map((quizId) => this.toIdString(quizId)),
+    );
 
     if (
       completedItems.lessonId &&
-      !enrollment.completedLessons.includes(completedItems.lessonId as any)
+      !completedLessonIds.has(completedItems.lessonId)
     ) {
       enrollment.completedLessons.push(completedItems.lessonId as any);
       isUpdated = true;
     }
 
-    if (
-      completedItems.quizId &&
-      !enrollment.completedQuizzes.includes(completedItems.quizId as any)
-    ) {
+    if (completedItems.quizId && !completedQuizIds.has(completedItems.quizId)) {
       enrollment.completedQuizzes.push(completedItems.quizId as any);
       isUpdated = true;
     }
@@ -233,5 +447,86 @@ export class EnrollmentsService {
     }
 
     return enrollment;
+  }
+
+  private async findEnrollmentOrThrow(
+    courseId: string,
+    userId: string,
+  ): Promise<EnrollmentDocument> {
+    const enrollment = await this.enrollmentModel
+      .findOne({ course: courseId, user: userId })
+      .exec();
+    if (!enrollment) {
+      throw new ForbiddenException('يجب التسجيل في الدورة أولاً');
+    }
+
+    return enrollment;
+  }
+
+  private async getCourseChaptersForProgress(courseId: string): Promise<any[]> {
+    const course = await this.courseModel.findById(courseId).exec();
+    if (!course) {
+      throw new NotFoundException(
+        `الدورة التدريبية بالمعرف ${courseId} غير موجودة`,
+      );
+    }
+
+    return this.chapterModel
+      .find({ course: courseId })
+      .sort({ orderIndex: 1 })
+      .populate({ path: 'lessons', options: { sort: { orderIndex: 1 } } })
+      .populate('quiz')
+      .exec();
+  }
+
+  private mapEnrollmentToAccess(enrollment: Enrollment): CourseProgressAccess {
+    return {
+      completedLessonIds: new Set(
+        (enrollment.completedLessons ?? []).map((lessonId) =>
+          this.toIdString(lessonId),
+        ),
+      ),
+      completedQuizIds: new Set(
+        (enrollment.completedQuizzes ?? []).map((quizId) =>
+          this.toIdString(quizId),
+        ),
+      ),
+    };
+  }
+
+  private isChapterCompleted(
+    chapter: any,
+    access: CourseProgressAccess,
+  ): boolean {
+    const lessons = this.getChapterLessons(chapter);
+    if (lessons.length > 0) {
+      return lessons.every((lesson: any) =>
+        access.completedLessonIds.has(this.toIdString(lesson._id)),
+      );
+    }
+
+    if (chapter.quiz) {
+      return access.completedQuizIds.has(
+        this.toIdString(this.getItemId(chapter.quiz)),
+      );
+    }
+
+    return true;
+  }
+
+  private getChapterLessons(chapter: any): any[] {
+    return Array.isArray(chapter.lessons) ? chapter.lessons : [];
+  }
+
+  private idsEqual(left: any, right: any): boolean {
+    return this.toIdString(left) === this.toIdString(right);
+  }
+
+  private getItemId(item: any): any {
+    return item?._id ?? item;
+  }
+
+  private toIdString(value: any): string {
+    return value?._id?.toString?.() ?? value?.toString?.() ?? '';
   }
 }

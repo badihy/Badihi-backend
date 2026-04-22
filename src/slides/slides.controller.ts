@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Slides')
 @ApiBearerAuth('JWT-access')
@@ -36,14 +37,28 @@ export class SlidesController {
   @Get()
   @ApiOperation({ summary: 'Get slides, optionally filtered by lessonId' })
   @ApiQuery({ name: 'lessonId', required: false, type: String })
-  findAll(@Query('lessonId') lessonId?: string) {
-    return this.slidesService.findAll(lessonId);
+  findAll(
+    @Query('lessonId') lessonId: string | undefined,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.slidesService.findAll(
+      lessonId,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a slide by id' })
-  findOne(@Param('id') id: string) {
-    return this.slidesService.findOne(id);
+  findOne(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.slidesService.findOne(
+      id,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Patch(':id')

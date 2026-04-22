@@ -13,6 +13,7 @@ import { UpdateChapterDto } from './dto/update-chapter.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Chapters')
 @ApiBearerAuth('JWT-access')
@@ -29,14 +30,28 @@ export class ChaptersController {
 
   @Get('by-course/:courseId')
   @ApiOperation({ summary: 'Get all chapters for a specific course' })
-  findAllChapters(@Param('courseId') courseId: string) {
-    return this.chaptersService.findAllChapters(courseId);
+  findAllChapters(
+    @Param('courseId') courseId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.chaptersService.findAllChapters(
+      courseId,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single chapter by ID' })
-  findOneChapter(@Param('id') id: string) {
-    return this.chaptersService.findOneChapter(id);
+  findOneChapter(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.chaptersService.findOneChapter(
+      id,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Patch(':id')

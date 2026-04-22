@@ -12,6 +12,7 @@ import { CreateLessonDto } from './dto/create-lesson.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Lessons')
 @ApiBearerAuth('JWT-access')
@@ -28,14 +29,28 @@ export class LessonsController {
 
   @Get('by-chapter/:chapterId')
   @ApiOperation({ summary: 'Get all lessons for a specific chapter' })
-  findAllLessons(@Param('chapterId') chapterId: string) {
-    return this.lessonsService.findAllLessons(chapterId);
+  findAllLessons(
+    @Param('chapterId') chapterId: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.lessonsService.findAllLessons(
+      chapterId,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a single lesson by ID' })
-  findOneLesson(@Param('id') id: string) {
-    return this.lessonsService.findOneLesson(id);
+  findOneLesson(
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+    @CurrentUser('role') role: UserRole,
+  ) {
+    return this.lessonsService.findOneLesson(
+      id,
+      role === UserRole.ADMIN ? undefined : userId,
+    );
   }
 
   @Patch(':id')

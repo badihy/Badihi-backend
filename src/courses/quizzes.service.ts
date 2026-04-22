@@ -8,12 +8,14 @@ import { Model } from 'mongoose';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
 import { CreateQuizDto } from './dto/create-quiz.dto';
+import { EnrollmentsService } from './enrollments.service';
 
 @Injectable()
 export class QuizzesService {
   constructor(
     @InjectModel(Chapter.name) private chapterModel: Model<ChapterDocument>,
     @InjectModel(Quiz.name) private quizModel: Model<QuizDocument>,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   /**
@@ -57,7 +59,14 @@ export class QuizzesService {
   /**
    * Get the quiz associated with a specific chapter
    */
-  async findQuizByChapter(chapterId: string): Promise<Quiz> {
+  async findQuizByChapter(chapterId: string, userId?: string): Promise<Quiz> {
+    if (userId) {
+      await this.enrollmentsService.assertChapterAccessibleById(
+        userId,
+        chapterId,
+      );
+    }
+
     const chapter = await this.chapterModel
       .findById(chapterId)
       .populate('quiz')
@@ -76,7 +85,11 @@ export class QuizzesService {
   /**
    * Get a single quiz by ID
    */
-  async findOneQuiz(id: string): Promise<Quiz> {
+  async findOneQuiz(id: string, userId?: string): Promise<Quiz> {
+    if (userId) {
+      await this.enrollmentsService.assertQuizAccessibleById(userId, id);
+    }
+
     const quiz = await this.quizModel.findById(id).exec();
     if (!quiz) {
       throw new NotFoundException(`الاختبار بالمعرف ${id} غير موجود`);

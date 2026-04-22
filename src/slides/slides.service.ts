@@ -9,6 +9,7 @@ import { CreateSlideDto } from './dto/create-slide.dto';
 import { UpdateSlideDto } from './dto/update-slide.dto';
 import { Slide, SlideDocument } from './schemas/slide.schema';
 import { Lesson, LessonDocument } from '../courses/schemas/lesson.schema';
+import { EnrollmentsService } from '../courses/enrollments.service';
 
 @Injectable()
 export class SlidesService {
@@ -16,6 +17,7 @@ export class SlidesService {
     @InjectModel(Slide.name) private readonly slideModel: Model<SlideDocument>,
     @InjectModel(Lesson.name)
     private readonly lessonModel: Model<LessonDocument>,
+    private readonly enrollmentsService: EnrollmentsService,
   ) {}
 
   /**
@@ -48,7 +50,7 @@ export class SlidesService {
   /**
    * Get all slides (optionally by lessonId)
    */
-  async findAll(lessonId?: string): Promise<Slide[]> {
+  async findAll(lessonId?: string, userId?: string): Promise<Slide[]> {
     const filter: any = {};
 
     if (lessonId) {
@@ -56,7 +58,15 @@ export class SlidesService {
       if (!lesson) {
         throw new NotFoundException(`Lesson with id ${lessonId} was not found`);
       }
+      if (userId) {
+        await this.enrollmentsService.assertLessonAccessibleById(
+          userId,
+          lessonId,
+        );
+      }
       filter.lesson = lessonId;
+    } else if (userId) {
+      throw new BadRequestException('يجب تحديد الدرس لعرض السلايدز');
     }
 
     return this.slideModel.find(filter).sort({ orderIndex: 1 }).exec();
@@ -65,10 +75,16 @@ export class SlidesService {
   /**
    * Get one slide by id
    */
-  async findOne(id: string): Promise<Slide> {
+  async findOne(id: string, userId?: string): Promise<Slide> {
     const slide = await this.slideModel.findById(id).exec();
     if (!slide) {
       throw new NotFoundException(`Slide with id ${id} was not found`);
+    }
+    if (userId) {
+      await this.enrollmentsService.assertLessonAccessibleById(
+        userId,
+        slide.lesson.toString(),
+      );
     }
     return slide;
   }
