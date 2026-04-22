@@ -234,10 +234,18 @@ export class CoursesService {
 
     const enrollments = await this.enrollmentModel
       .find({ user: userId })
-      .select('course lastAccessedAt enrolledAt')
+      .select(
+        'course completedLessons completedQuizzes progress isCompleted lastAccessedAt enrolledAt',
+      )
       .sort({ lastAccessedAt: -1, enrolledAt: -1, createdAt: -1 })
       .lean()
       .exec();
+    const enrollmentByCourseId = new Map(
+      enrollments.map((enrollment: any) => [
+        this.toIdString(enrollment.course),
+        enrollment,
+      ]),
+    );
 
     const orderedCourseIds = Array.from(
       new Set(
@@ -300,6 +308,34 @@ export class CoursesService {
       .find({ _id: { $in: pagedCourseIds } })
       .populate('category')
       .exec();
+    const courseLearningStates = await this.courseModel
+      .find({ _id: { $in: pagedCourseIds } })
+      .select('_id estimationTime chapters')
+      .populate({
+        path: 'chapters',
+        select:
+          'title subtitle description orderIndex lessons quiz isCompleted isLocked',
+        options: { sort: { orderIndex: 1 } },
+        populate: [
+          {
+            path: 'lessons',
+            select:
+              'title description orderIndex estimatedDuration isCompleted isLocked',
+            options: { sort: { orderIndex: 1 } },
+          },
+          {
+            path: 'quiz',
+            select:
+              'title description timeLimit passingScore isCompleted score',
+          },
+        ],
+      })
+      .lean()
+      .exec();
+    const enrolledCourseStateMap = this.buildEnrolledCourseStateMap(
+      courseLearningStates,
+      enrollmentByCourseId,
+    );
 
     const ordering = new Map(pagedCourseIds.map((id, index) => [id, index]));
     courses.sort(
@@ -320,18 +356,270 @@ export class CoursesService {
         courses.map((course) => course._id),
       );
 
+    const mappedCourses = this.courseResponseMapperService.mapCoursesResponse(
+      courses,
+      PopulateLevel.NONE,
+      statsMap,
+      bookmarkedSet,
+      reviewsMap,
+    );
+
     return {
-      courses: this.courseResponseMapperService.mapCoursesResponse(
-        courses,
-        PopulateLevel.NONE,
-        statsMap,
-        bookmarkedSet,
-        reviewsMap,
-      ),
+      courses: mappedCourses.map((course) => ({
+        ...course,
+        ...(enrolledCourseStateMap[this.toIdString(course._id)] ?? {}),
+      })),
       total,
       page: normalizedPage,
       limit: normalizedLimit,
       totalPages: Math.ceil(total / normalizedLimit),
     };
+  }
+
+  private buildEnrolledCourseStateMap(
+    courses: any[],
+    enrollmentByCourseId: Map<string, any>,
+  ): Record<string, any> {
+    return courses.reduce((stateMap: Record<string, any>, course: any) => {
+      const courseId = this.toIdString(course._id);
+      const enrollment = enrollmentByCourseId.get(courseId);
+      stateMap[courseId] = this.buildEnrolledCourseState(course, enrollment);
+      return stateMap;
+    }, {});
+  }
+
+  private buildEnrolledCourseState(course: any, enrollment: any): any {
+    const progress = Math.min(
+      Math.max(Number(enrollment?.progress) || 0, 0),
+      100,
+    );
+    const completedLessonIds = new Set<string>(
+      (enrollment?.completedLessons ?? []).map((lessonId: any) =>
+        this.toIdString(lessonId),
+      ),
+    );
+    const completedQuizIds = new Set<string>(
+      (enrollment?.completedQuizzes ?? []).map((quizId: any) =>
+        this.toIdString(quizId),
+      ),
+    );
+    const chapters = this.sortByOrderIndex(course?.chapters ?? []);
+    const openState = this.findLastOpenLearningState(
+      chapters,
+      completedLessonIds,
+      completedQuizIds,
+    );
+    const remainingMinutes = this.calculateRemainingMinutes(
+      course,
+      progress,
+      completedLessonIds,
+      completedQuizIds,
+    );
+
+    return {
+      progress,
+      isCompleted: !!enrollment?.isCompleted || progress === 100,
+      lastOpenChapter: openState.chapter,
+      lastOpenLesson: openState.lesson,
+      remainingHours: Number((remainingMinutes / 60).toFixed(2)),
+      remainingMinutes,
+    };
+  }
+
+  private findLastOpenLearningState(
+    chapters: any[],
+    completedLessonIds: Set<string>,
+    completedQuizIds: Set<string>,
+  ): { chapter: any; lesson: any } {
+    let lastOpenChapter: any = null;
+    let lastOpenLesson: any = null;
+
+    for (const chapter of chapters) {
+      if (chapter?.isLocked) {
+        break;
+      }
+
+      lastOpenChapter = this.mapOpenChapter(
+        chapter,
+        completedLessonIds,
+        completedQuizIds,
+      );
+      lastOpenLesson = this.findLastOpenLesson(chapter, completedLessonIds);
+
+      if (
+        !this.isChapterCompletedForEnrollment(
+          chapter,
+          completedLessonIds,
+          completedQuizIds,
+        )
+      ) {
+        break;
+      }
+    }
+
+    return { chapter: lastOpenChapter, lesson: lastOpenLesson };
+  }
+
+  private findLastOpenLesson(
+    chapter: any,
+    completedLessonIds: Set<string>,
+  ): any {
+    const lessons = this.sortByOrderIndex(chapter?.lessons ?? []);
+    let lastOpenLesson: any = null;
+
+    for (const lesson of lessons) {
+      if (lesson?.isLocked) {
+        break;
+      }
+
+      const lessonId = this.toIdString(lesson._id);
+      lastOpenLesson = this.mapOpenLesson(lesson, completedLessonIds);
+
+      if (!completedLessonIds.has(lessonId)) {
+        break;
+      }
+    }
+
+    return lastOpenLesson;
+  }
+
+  private calculateRemainingMinutes(
+    course: any,
+    progress: number,
+    completedLessonIds: Set<string>,
+    completedQuizIds: Set<string>,
+  ): number {
+    const courseHours = this.parseHours(course?.estimationTime);
+    if (courseHours > 0) {
+      return Math.max(
+        0,
+        Math.round(courseHours * 60 * ((100 - progress) / 100)),
+      );
+    }
+
+    return this.calculateRemainingContentMinutes(
+      course?.chapters ?? [],
+      completedLessonIds,
+      completedQuizIds,
+    );
+  }
+
+  private calculateRemainingContentMinutes(
+    chapters: any[],
+    completedLessonIds: Set<string>,
+    completedQuizIds: Set<string>,
+  ): number {
+    return this.sortByOrderIndex(chapters).reduce((total, chapter: any) => {
+      const lessonsMinutes = this.sortByOrderIndex(
+        chapter?.lessons ?? [],
+      ).reduce((sum, lesson: any) => {
+        const lessonId = this.toIdString(lesson._id);
+        if (completedLessonIds.has(lessonId)) {
+          return sum;
+        }
+
+        return sum + Math.max(0, Number(lesson.estimatedDuration) || 0);
+      }, 0);
+
+      const quizId = this.toIdString(chapter?.quiz?._id ?? chapter?.quiz);
+      const quizMinutes =
+        chapter?.quiz && !completedQuizIds.has(quizId)
+          ? Math.max(0, Number(chapter.quiz.timeLimit) || 0)
+          : 0;
+
+      return total + lessonsMinutes + quizMinutes;
+    }, 0);
+  }
+
+  private isChapterCompletedForEnrollment(
+    chapter: any,
+    completedLessonIds: Set<string>,
+    completedQuizIds: Set<string>,
+  ): boolean {
+    const lessons = this.sortByOrderIndex(chapter?.lessons ?? []);
+    if (lessons.length > 0) {
+      return lessons.every((lesson: any) =>
+        completedLessonIds.has(this.toIdString(lesson._id)),
+      );
+    }
+
+    if (chapter?.quiz) {
+      return completedQuizIds.has(
+        this.toIdString(chapter.quiz._id ?? chapter.quiz),
+      );
+    }
+
+    return true;
+  }
+
+  private mapOpenChapter(
+    chapter: any,
+    completedLessonIds: Set<string>,
+    completedQuizIds: Set<string>,
+  ): any {
+    if (!chapter) {
+      return null;
+    }
+
+    const quizId = this.toIdString(chapter.quiz?._id ?? chapter.quiz);
+    return {
+      _id: chapter._id,
+      title: chapter.title,
+      subtitle: chapter.subtitle,
+      description: chapter.description,
+      orderIndex: chapter.orderIndex,
+      isCompleted: this.isChapterCompletedForEnrollment(
+        chapter,
+        completedLessonIds,
+        completedQuizIds,
+      ),
+      isLocked: !!chapter.isLocked,
+    };
+  }
+
+  private mapOpenLesson(lesson: any, completedLessonIds: Set<string>): any {
+    if (!lesson) {
+      return null;
+    }
+
+    const lessonId = this.toIdString(lesson._id);
+    return {
+      _id: lesson._id,
+      title: lesson.title,
+      description: lesson.description,
+      orderIndex: lesson.orderIndex,
+      estimatedDuration: lesson.estimatedDuration,
+      isCompleted: completedLessonIds.has(lessonId),
+      isLocked: !!lesson.isLocked,
+    };
+  }
+
+  private parseHours(value?: string): number {
+    if (!value) {
+      return 0;
+    }
+
+    const match = value.match(/(\d+(?:\.\d+)?)/);
+    if (!match) {
+      return 0;
+    }
+
+    const amount = Number(match[1]);
+    if (!Number.isFinite(amount)) {
+      return 0;
+    }
+
+    return /min|minute|دقيقة|دقايق/i.test(value) ? amount / 60 : amount;
+  }
+
+  private sortByOrderIndex(items: any[]): any[] {
+    return [...items].sort(
+      (left: any, right: any) =>
+        (Number(left?.orderIndex) || 0) - (Number(right?.orderIndex) || 0),
+    );
+  }
+
+  private toIdString(value: any): string {
+    return value?._id?.toString?.() ?? value?.toString?.() ?? '';
   }
 }
