@@ -8,6 +8,7 @@ import { Model } from 'mongoose';
 import { Chapter, ChapterDocument } from './schemas/chapter.schema';
 import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLockStatusDto } from './dto/update-lock-status.dto';
 import { EnrollmentsService } from './enrollments.service';
 
 @Injectable()
@@ -89,13 +90,14 @@ export class LessonsService {
         typeof lesson.toObject === 'function' ? lesson.toObject() : lesson;
       const lessonId = mapped._id?.toString?.() ?? '';
       mapped.isCompleted = completedLessonIds.has(lessonId);
-      mapped.isLocked = !previousLessonsCompleted;
+      mapped.isLocked = !!mapped.isLocked || !previousLessonsCompleted;
 
       if (mapped.isLocked) {
         delete mapped.slides;
       }
 
-      previousLessonsCompleted = previousLessonsCompleted && mapped.isCompleted;
+      previousLessonsCompleted =
+        previousLessonsCompleted && mapped.isCompleted && !mapped.isLocked;
 
       return mapped;
     });
@@ -130,6 +132,25 @@ export class LessonsService {
   ): Promise<Lesson> {
     const updatedLesson = await this.lessonModel
       .findByIdAndUpdate(id, updateData, { new: true })
+      .exec();
+
+    if (!updatedLesson) {
+      throw new NotFoundException(`الدرس بالمعرف ${id} غير موجود`);
+    }
+
+    return updatedLesson;
+  }
+
+  async updateLessonLock(
+    id: string,
+    updateLockStatusDto: UpdateLockStatusDto,
+  ): Promise<Lesson> {
+    const updatedLesson = await this.lessonModel
+      .findByIdAndUpdate(
+        id,
+        { isLocked: updateLockStatusDto.isLocked },
+        { new: true },
+      )
       .exec();
 
     if (!updatedLesson) {

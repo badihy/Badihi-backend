@@ -34,6 +34,9 @@ export class Chapter {
 
   @Prop({ default: false })
   isCompleted: boolean;
+
+  @Prop({ default: false })
+  isLocked: boolean;
 }
 
 export type ChapterDocument = Chapter & Document;

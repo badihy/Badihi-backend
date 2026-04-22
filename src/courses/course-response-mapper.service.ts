@@ -90,6 +90,7 @@ export class CourseResponseMapperService {
       description: chapter.description,
       orderIndex: chapter.orderIndex,
       isCompleted: chapter.isCompleted,
+      isLocked: !!chapter.isLocked,
       createdAt: chapter.createdAt,
       updatedAt: chapter.updatedAt,
     };
@@ -140,6 +141,7 @@ export class CourseResponseMapperService {
       orderIndex: lesson.orderIndex,
       estimatedDuration: lesson.estimatedDuration,
       isCompleted: lesson.isCompleted,
+      isLocked: !!lesson.isLocked,
       createdAt: lesson.createdAt,
       updatedAt: lesson.updatedAt,
     };
@@ -214,9 +216,9 @@ export class CourseResponseMapperService {
 
     for (const chapter of chapters) {
       const chapterIsAccessible = previousChaptersCompleted;
-      chapter.isLocked = !chapterIsAccessible;
+      chapter.isLocked = !!chapter.isLocked || !chapterIsAccessible;
 
-      if (!chapterIsAccessible) {
+      if (chapter.isLocked) {
         this.lockChapter(chapter);
       } else {
         this.applyLessonLocks(chapter, access);
@@ -225,7 +227,7 @@ export class CourseResponseMapperService {
 
       chapter.isCompleted = this.isChapterCompleted(chapter, access);
       previousChaptersCompleted =
-        previousChaptersCompleted && chapter.isCompleted;
+        previousChaptersCompleted && chapter.isCompleted && !chapter.isLocked;
     }
   }
 
@@ -238,14 +240,15 @@ export class CourseResponseMapperService {
     for (const lesson of chapter.lessons) {
       const lessonId = this.toIdString(lesson._id);
       lesson.isCompleted = access.completedLessonIds.has(lessonId);
-      lesson.isLocked = !previousLessonsCompleted;
+      lesson.isLocked = !!lesson.isLocked || !previousLessonsCompleted;
 
       if (lesson.isLocked) {
         delete lesson.slides;
         delete lesson.slideIds;
       }
 
-      previousLessonsCompleted = previousLessonsCompleted && lesson.isCompleted;
+      previousLessonsCompleted =
+        previousLessonsCompleted && lesson.isCompleted && !lesson.isLocked;
     }
   }
 

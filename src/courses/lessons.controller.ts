@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { LessonsService } from './lessons.service';
 import { CreateLessonDto } from './dto/create-lesson.dto';
+import { UpdateLockStatusDto } from './dto/update-lock-status.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -61,6 +62,16 @@ export class LessonsController {
     @Body() updateData: Partial<CreateLessonDto>,
   ) {
     return this.lessonsService.updateLesson(id, updateData);
+  }
+
+  @Patch(':id/lock')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update lesson locked status' })
+  updateLessonLock(
+    @Param('id') id: string,
+    @Body() updateLockStatusDto: UpdateLockStatusDto,
+  ) {
+    return this.lessonsService.updateLessonLock(id, updateLockStatusDto);
   }
 
   @Delete(':id')

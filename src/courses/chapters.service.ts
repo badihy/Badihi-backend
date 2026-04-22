@@ -7,6 +7,7 @@ import { Lesson, LessonDocument } from './schemas/lesson.schema';
 import { Quiz, QuizDocument } from './schemas/quiz.schema';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { UpdateLockStatusDto } from './dto/update-lock-status.dto';
 import {
   EnrollmentsService,
   CourseProgressAccess,
@@ -117,6 +118,25 @@ export class ChaptersService {
     return updatedChapter;
   }
 
+  async updateChapterLock(
+    id: string,
+    updateLockStatusDto: UpdateLockStatusDto,
+  ): Promise<Chapter> {
+    const updatedChapter = await this.chapterModel
+      .findByIdAndUpdate(
+        id,
+        { isLocked: updateLockStatusDto.isLocked },
+        { new: true },
+      )
+      .exec();
+
+    if (!updatedChapter) {
+      throw new NotFoundException(`الفصل بالمعرف ${id} غير موجود`);
+    }
+
+    return updatedChapter;
+  }
+
   /**
    * Delete a chapter and cascade-delete its lessons; remove reference from the course
    */
@@ -153,14 +173,14 @@ export class ChaptersService {
     return chapters.map((chapter: any) => {
       const mapped =
         typeof chapter.toObject === 'function' ? chapter.toObject() : chapter;
-      mapped.isLocked = !previousChaptersCompleted;
+      mapped.isLocked = !!mapped.isLocked || !previousChaptersCompleted;
 
       this.applyLessonLocks(mapped, access, mapped.isLocked);
       this.applyQuizLock(mapped, access, mapped.isLocked);
 
       mapped.isCompleted = this.isChapterCompleted(mapped, access);
       previousChaptersCompleted =
-        previousChaptersCompleted && mapped.isCompleted;
+        previousChaptersCompleted && mapped.isCompleted && !mapped.isLocked;
 
       return mapped;
     });
@@ -179,8 +199,10 @@ export class ChaptersService {
     for (const lesson of chapter.lessons) {
       const lessonId = this.toIdString(lesson._id);
       lesson.isCompleted = !!access?.completedLessonIds.has(lessonId);
-      lesson.isLocked = forceLocked || !previousLessonsCompleted;
-      previousLessonsCompleted = previousLessonsCompleted && lesson.isCompleted;
+      lesson.isLocked =
+        !!lesson.isLocked || forceLocked || !previousLessonsCompleted;
+      previousLessonsCompleted =
+        previousLessonsCompleted && lesson.isCompleted && !lesson.isLocked;
     }
   }
 

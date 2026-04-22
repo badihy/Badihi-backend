@@ -31,6 +31,9 @@ export class Lesson {
   @Prop({ default: false })
   isCompleted: boolean;
 
+  @Prop({ default: false })
+  isLocked: boolean;
+
   @Prop({ required: false })
   estimatedDuration?: number; // in minutes
 }

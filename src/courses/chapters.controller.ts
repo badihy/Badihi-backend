@@ -10,6 +10,7 @@ import {
 import { ChaptersService } from './chapters.service';
 import { CreateChapterDto } from './dto/create-chapter.dto';
 import { UpdateChapterDto } from './dto/update-chapter.dto';
+import { UpdateLockStatusDto } from './dto/update-lock-status.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/enums/user-role.enum';
@@ -59,6 +60,16 @@ export class ChaptersController {
   @ApiOperation({ summary: 'Update a chapter by ID' })
   updateChapter(@Param('id') id: string, @Body() updateData: UpdateChapterDto) {
     return this.chaptersService.updateChapter(id, updateData);
+  }
+
+  @Patch(':id/lock')
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Update chapter locked status' })
+  updateChapterLock(
+    @Param('id') id: string,
+    @Body() updateLockStatusDto: UpdateLockStatusDto,
+  ) {
+    return this.chaptersService.updateChapterLock(id, updateLockStatusDto);
   }
 
   @Delete(':id')

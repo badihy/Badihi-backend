@@ -302,8 +302,13 @@ export class EnrollmentsService {
     }
 
     const access = this.mapEnrollmentToAccess(enrollment);
+    const targetChapter = chapters[targetIndex];
+    if (targetChapter.isLocked) {
+      throw new ForbiddenException('هذا الفصل مقفول حالياً');
+    }
+
     for (const chapter of chapters.slice(0, targetIndex)) {
-      if (!this.isChapterCompleted(chapter, access)) {
+      if (chapter.isLocked || !this.isChapterCompleted(chapter, access)) {
         throw new ForbiddenException(
           'يجب إكمال الفصل السابق قبل فتح هذا الفصل',
         );
@@ -327,7 +332,7 @@ export class EnrollmentsService {
       );
 
       if (lessonIndex === -1) {
-        if (!this.isChapterCompleted(chapter, access)) {
+        if (chapter.isLocked || !this.isChapterCompleted(chapter, access)) {
           throw new ForbiddenException(
             'يجب إكمال الفصل السابق قبل فتح هذا الدرس',
           );
@@ -335,8 +340,17 @@ export class EnrollmentsService {
         continue;
       }
 
+      if (chapter.isLocked) {
+        throw new ForbiddenException('هذا الفصل مقفول حالياً');
+      }
+
+      if (lessons[lessonIndex].isLocked) {
+        throw new ForbiddenException('هذا الدرس مقفول حالياً');
+      }
+
       for (const previousLesson of lessons.slice(0, lessonIndex)) {
         if (
+          previousLesson.isLocked ||
           !access.completedLessonIds.has(this.toIdString(previousLesson._id))
         ) {
           throw new ForbiddenException(
@@ -362,10 +376,14 @@ export class EnrollmentsService {
 
     for (const chapter of chapters) {
       if (chapter.quiz && this.idsEqual(this.getItemId(chapter.quiz), quizId)) {
+        if (chapter.isLocked) {
+          throw new ForbiddenException('هذا الفصل مقفول حالياً');
+        }
+
         return;
       }
 
-      if (!this.isChapterCompleted(chapter, access)) {
+      if (chapter.isLocked || !this.isChapterCompleted(chapter, access)) {
         throw new ForbiddenException(
           'يجب إكمال الفصل السابق قبل فتح هذا الاختبار',
         );
