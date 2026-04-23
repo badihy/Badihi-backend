@@ -70,7 +70,7 @@ describe('AppController', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('Invalid link'),
+      expect.stringContaining('الرابط غير صالح'),
     );
   });
 });

@@ -266,7 +266,7 @@ export class AuthService {
       );
     }
 
-    return { message: 'Password reset email sent successfully' };
+    return { message: 'تم إرسال رابط إعادة تعيين كلمة المرور بنجاح' };
   }
 
   async resetPassword(resetPasswordDto: ResetPasswordDto) {
@@ -286,13 +286,8 @@ export class AuthService {
       resetPasswordDto.newPassword,
     );
 
-    const tokens = await this.issueTokenPairForUser(user);
-
     return {
-      message: 'Password reset successfully',
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      user: tokens.user,
+      message: 'تم إعادة تعيين كلمة المرور بنجاح',
     };
   }
   async verifyEmail(token: string) {
@@ -302,7 +297,7 @@ export class AuthService {
     }
 
     return {
-      message: 'Email verified successfully',
+      message: 'تم تأكيد البريد الإلكتروني بنجاح',
     };
   }
 

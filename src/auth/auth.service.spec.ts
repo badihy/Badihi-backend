@@ -78,8 +78,34 @@ describe('AuthService', () => {
 
     expect(userServiceMock.verifyEmail).toHaveBeenCalledWith('verify-token');
     expect(result).toEqual({
-      message: 'Email verified successfully',
+      message: 'تم تأكيد البريد الإلكتروني بنجاح',
     });
     expect(jwtServiceMock.signAsync).not.toHaveBeenCalled();
+  });
+
+  it('resets the password and returns only a success message', async () => {
+    userServiceMock.findByResetToken.mockResolvedValue({
+      _id: 'user-1',
+      email: 'user@example.com',
+    });
+
+    const result = await service.resetPassword({
+      token: 'reset-token',
+      newPassword: 'new-password',
+      confirmNewPassword: 'new-password',
+    });
+
+    expect(userServiceMock.findByResetToken).toHaveBeenCalledWith(
+      'reset-token',
+    );
+    expect(userServiceMock.updatePassword).toHaveBeenCalledWith(
+      'user-1',
+      'new-password',
+    );
+    expect(result).toEqual({
+      message: 'تم إعادة تعيين كلمة المرور بنجاح',
+    });
+    expect(jwtServiceMock.signAsync).not.toHaveBeenCalled();
+    expect(userServiceMock.updateRefreshToken).not.toHaveBeenCalled();
   });
 });

@@ -207,11 +207,11 @@ export function getVerifyEmailErrorPage(): string {
 export function getInvalidResetPasswordLinkPage(): string {
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="ar" dir="rtl">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Error</title>
+      <title>الرابط غير صالح</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -220,8 +220,8 @@ export function getInvalidResetPasswordLinkPage(): string {
     </head>
     <body>
       <div class="container">
-        <h1>Invalid link</h1>
-        <p>Please use the link provided in the email.</p>
+        <h1>الرابط غير صالح</h1>
+        <p>يرجى استخدام الرابط المرسل إليك في البريد الإلكتروني.</p>
       </div>
     </body>
     </html>
@@ -250,7 +250,7 @@ function getPasswordPage(
 
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="ar" dir="rtl">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -336,8 +336,8 @@ function getPasswordPage(
         <div id="message" class="message"></div>
         <form id="resetForm" onsubmit="handleSubmit(event)">
           <input type="hidden" id="token" value="${token}">
-          <input type="password" id="newPassword" placeholder="New password" required>
-          <input type="password" id="confirmPassword" placeholder="Confirm password" required>
+          <input type="password" id="newPassword" placeholder="كلمة المرور الجديدة" required>
+          <input type="password" id="confirmPassword" placeholder="تأكيد كلمة المرور الجديدة" required>
           <button type="submit">${options.buttonLabel}</button>
         </form>
         <p class="info">${options.infoText}</p>
@@ -404,12 +404,10 @@ function getPasswordPage(
           }
         };
 
-        function returnToAppAfterSuccess(data) {
+        function returnToAppAfterSuccess() {
           const params = {
             success: true,
             passwordUpdated: true,
-            token: data && data.accessToken,
-            refreshToken: data && data.refreshToken,
           };
 
           openApp(params, playStoreUrl);
@@ -424,7 +422,7 @@ function getPasswordPage(
 
           if (newPassword !== confirmPassword) {
             messageDiv.className = 'message error';
-            messageDiv.textContent = 'Passwords do not match';
+            messageDiv.textContent = 'كلمتا المرور غير متطابقتين';
             return;
           }
 
@@ -445,18 +443,18 @@ function getPasswordPage(
 
             if (response.ok) {
               messageDiv.className = 'message success';
-              messageDiv.textContent = 'Password reset successfully! Returning to the app...';
+              messageDiv.textContent = 'تم إعادة تعيين كلمة المرور بنجاح. جارٍ الرجوع إلى التطبيق...';
               document.getElementById('resetForm').reset();
               setTimeout(function() {
-                returnToAppAfterSuccess(data);
+                returnToAppAfterSuccess();
               }, 300);
             } else {
               messageDiv.className = 'message error';
-              messageDiv.textContent = data.message || 'Something went wrong';
+              messageDiv.textContent = data.message || 'حدث خطأ غير متوقع';
             }
           } catch (error) {
             messageDiv.className = 'message error';
-            messageDiv.textContent = 'A network error occurred';
+            messageDiv.textContent = 'حدث خطأ في الاتصال بالشبكة';
           }
         }
       </script>
@@ -467,10 +465,10 @@ function getPasswordPage(
 
 export function getResetPasswordPage(token: string): string {
   return getPasswordPage(token, {
-    title: 'Reset Password',
-    heading: 'Reset Password',
-    buttonLabel: 'Reset password',
-    infoText: 'If you are using the mobile app, it may open automatically.',
+    title: 'إعادة تعيين كلمة المرور',
+    heading: 'إعادة تعيين كلمة المرور',
+    buttonLabel: 'تأكيد إعادة التعيين',
+    infoText: 'إذا كنت تستخدم تطبيق الموبايل، فقد يتم فتحه تلقائيًا.',
     appPath: 'reset-password',
     browserPath: 'reset-password',
   });

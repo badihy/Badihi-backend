@@ -24,4 +24,15 @@ describe('translateErrorMessage', () => {
       translateErrorMessage('Failed to upload report image: timeout', 400),
     ).toBe('تعذر رفع صورة البلاغ');
   });
+
+  it('translates duplicate email conflicts to a clearer Arabic message', () => {
+    expect(
+      translateErrorMessage(
+        'Duplicate value for field "email": "test@example.com" already exists.',
+        409,
+      ),
+    ).toBe(
+      'البريد الإلكتروني مستخدم بالفعل، يرجى استخدام بريد إلكتروني آخر',
+    );
+  });
 });

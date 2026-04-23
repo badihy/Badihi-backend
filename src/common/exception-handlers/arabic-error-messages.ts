@@ -71,9 +71,25 @@ function hasArabic(message: string): boolean {
   return ARABIC_TEXT.test(message);
 }
 
+function duplicateFieldMessage(field: string): string {
+  switch (field) {
+    case 'email':
+      return 'البريد الإلكتروني مستخدم بالفعل، يرجى استخدام بريد إلكتروني آخر';
+    case 'username':
+      return 'اسم المستخدم مستخدم بالفعل، يرجى اختيار اسم مستخدم آخر';
+    case 'phone':
+      return 'رقم الهاتف مستخدم بالفعل، يرجى استخدام رقم هاتف آخر';
+    default:
+      return `${labelFor(field)} مستخدمة بالفعل، يرجى إدخال قيمة أخرى`;
+  }
+}
+
 function translateKnownPattern(message: string): string | undefined {
   if (/^Duplicate value for field/i.test(message)) {
-    return 'هذه القيمة مستخدمة بالفعل';
+    const field = message.match(/^Duplicate value for field "(.+?)":/i)?.[1];
+    return field
+      ? duplicateFieldMessage(field)
+      : 'هذه البيانات مستخدمة بالفعل، يرجى استخدام قيمة أخرى';
   }
 
   if (/^Lesson with id .+ was not found$/i.test(message)) {
@@ -93,7 +109,7 @@ function translateKnownPattern(message: string): string | undefined {
   }
 
   if (/duplicate key/i.test(message)) {
-    return 'هذه البيانات مستخدمة بالفعل';
+    return 'هذه البيانات مستخدمة بالفعل، يرجى استخدام قيمة أخرى';
   }
 
   if (/Cast to ObjectId failed/i.test(message)) {
