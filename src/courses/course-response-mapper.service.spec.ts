@@ -24,10 +24,14 @@ describe('CourseResponseMapperService', () => {
       {
         completedLessonIds: new Set(),
         completedQuizIds: new Set(),
+        progress: 30,
+        isCompleted: false,
       },
     );
 
     expect(result.isUserEnrolled).toBe(true);
+    expect(result.progress).toBe(30);
+    expect(result.isCompleted).toBe(false);
   });
 
   it('sets isUserEnrolled to false when course access is missing', () => {

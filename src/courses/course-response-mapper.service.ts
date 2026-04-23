@@ -48,6 +48,8 @@ export class CourseResponseMapperService {
           ? Number(stats.averageRating.toFixed(2))
           : 0,
       isUserEnrolled: !!access,
+      progress: access?.progress ?? 0,
+      isCompleted: access?.isCompleted ?? false,
       isBookmarked: !!isBookmarked,
       reviewsCount: reviewsBundle?.reviewsCount ?? 0,
       reviews: reviewsBundle?.reviews ?? [],
@@ -287,7 +289,12 @@ export class CourseResponseMapperService {
     if (chapter.quiz) {
       this.applyQuizLock(
         chapter,
-        { completedLessonIds: new Set(), completedQuizIds: new Set() },
+        {
+          completedLessonIds: new Set(),
+          completedQuizIds: new Set(),
+          progress: 0,
+          isCompleted: false,
+        },
         true,
       );
     }

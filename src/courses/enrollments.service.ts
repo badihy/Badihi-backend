@@ -18,6 +18,8 @@ import { UserService } from '../user/user.service';
 export type CourseProgressAccess = {
   completedLessonIds: Set<string>;
   completedQuizIds: Set<string>;
+  progress: number;
+  isCompleted: boolean;
 };
 
 @Injectable()
@@ -186,7 +188,7 @@ export class EnrollmentsService {
 
     const enrollment = await this.enrollmentModel
       .findOne({ course: courseId, user: userId })
-      .select('completedLessons completedQuizzes')
+      .select('completedLessons completedQuizzes progress isCompleted')
       .exec();
 
     if (!enrollment) {
@@ -215,7 +217,7 @@ export class EnrollmentsService {
 
     const enrollments = await this.enrollmentModel
       .find({ course: { $in: normalizedCourseIds }, user: userId })
-      .select('course completedLessons completedQuizzes')
+      .select('course completedLessons completedQuizzes progress isCompleted')
       .exec();
 
     for (const enrollment of enrollments) {
@@ -498,6 +500,11 @@ export class EnrollmentsService {
   }
 
   private mapEnrollmentToAccess(enrollment: Enrollment): CourseProgressAccess {
+    const progress = Math.min(
+      Math.max(Number(enrollment.progress) || 0, 0),
+      100,
+    );
+
     return {
       completedLessonIds: new Set(
         (enrollment.completedLessons ?? []).map((lessonId) =>
@@ -509,6 +516,8 @@ export class EnrollmentsService {
           this.toIdString(quizId),
         ),
       ),
+      progress,
+      isCompleted: !!enrollment.isCompleted || progress === 100,
     };
   }
 
