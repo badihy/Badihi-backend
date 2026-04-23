@@ -37,16 +37,9 @@ export class CourseResponseMapperService {
     const mapped: any = {
       _id: course._id,
       name: course.name,
-      description: course.description,
-      shortDescription: course.shortDescription,
       price: course.price,
-      estimationTime: course.estimationTime,
       coverImage: course.coverImage,
       thumbnailImage: course.thumbnailImage,
-      willLearn: course.willLearn,
-      requirements: course.requirements,
-      targetAudience: course.targetAudience,
-      level: course.level,
       createdAt: course.createdAt,
       updatedAt: course.updatedAt,
       enrollmentsCount: stats?.enrollmentsCount ?? 0,
@@ -54,9 +47,19 @@ export class CourseResponseMapperService {
         typeof stats?.averageRating === 'number'
           ? Number(stats.averageRating.toFixed(2))
           : 0,
+      isUserEnrolled: !!access,
       isBookmarked: !!isBookmarked,
       reviewsCount: reviewsBundle?.reviewsCount ?? 0,
       reviews: reviewsBundle?.reviews ?? [],
+      courseDetails: {
+        description: course.description,
+        shortDescription: course.shortDescription,
+        willLearn: course.willLearn ?? [],
+        requirements: course.requirements ?? [],
+        targetAudience: course.targetAudience ?? [],
+        level: course.level,
+        estimationTime: course.estimationTime,
+      },
     };
 
     if (course.category) {

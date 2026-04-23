@@ -9,7 +9,6 @@ describe('AuthController', () => {
     refreshTokens: jest.fn(),
     forgotPassword: jest.fn(),
     resetPassword: jest.fn(),
-    verifyEmail: jest.fn(),
     googleSignInMobile: jest.fn(),
   };
 
@@ -50,4 +49,5 @@ describe('AuthController', () => {
       'google-id-token',
     );
   });
+
 });

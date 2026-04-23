@@ -74,7 +74,7 @@ export const getWelcomeEmailHtml = (name: string, link: string) => `
                             </p>
 
                             <p class="body-copy" style="margin:0 0 22px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
-                                تم إنشاء حسابك بنجاح وأصبح بإمكانك الآن الوصول إلى محتوى تعليمي يساعدك على الفهم والتطبيق، خطوة بخطوة.
+                                تم إنشاء حسابك بنجاح، والخطوة الأخيرة الآن هي تأكيد بريدك الإلكتروني حتى تتمكن من تسجيل الدخول إلى التطبيق.
                             </p>
 
                             <p class="body-copy" style="margin:0 0 22px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
@@ -82,7 +82,7 @@ export const getWelcomeEmailHtml = (name: string, link: string) => `
                             </p>
 
                             <p class="body-copy" style="margin:0 0 30px; color:#5f636d; font-size:16px; line-height:2; text-align:right; font-family:Tahoma, Arial, sans-serif;">
-                                إذا احتجت أي مساعدة أو واجهت أي مشكلة أثناء استخدام التطبيق، فريق بديهي موجود لدعمك في أي وقت.
+                                بعد الضغط على زر التأكيد سيتم تفعيل حسابك، ثم يمكنك الرجوع للتطبيق وتسجيل الدخول بالبريد الإلكتروني وكلمة المرور اللذين أنشأتهما.
                             </p>
                         </td>
                     </tr>
@@ -90,7 +90,7 @@ export const getWelcomeEmailHtml = (name: string, link: string) => `
                     <tr>
                         <td class="button-cell" align="right" style="padding:0 40px 38px;">
                             <a class="cta-button" href="${link}" style="display:inline-block; background:#5e35b1; color:#ffffff; text-decoration:none; border-radius:6px; padding:12px 24px; font-size:16px; font-weight:700; line-height:20px; font-family:Tahoma, Arial, sans-serif;">
-                                تسجيل الدخول
+                                تأكيد الحساب
                             </a>
                         </td>
                     </tr>

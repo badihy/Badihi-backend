@@ -25,14 +25,76 @@ const sharedStyles = `
   }
 `;
 
+const APP_PACKAGE_NAME = 'com.badihi.app';
+const PLAY_STORE_URL = `https://play.google.com/store/apps/details?id=${APP_PACKAGE_NAME}`;
+const WEB_BASE_URL = 'https://api.badihy.com';
+
+function buildQueryString(
+  params: Record<string, string | boolean | undefined>,
+): string {
+  const searchParams = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value === undefined) {
+      continue;
+    }
+
+    searchParams.set(key, String(value));
+  }
+
+  return searchParams.toString();
+}
+
+function buildCustomScheme(
+  path: string,
+  params: Record<string, string | boolean | undefined>,
+): string {
+  const query = buildQueryString(params);
+  return query ? `badihi://${path}?${query}` : `badihi://${path}`;
+}
+
+function buildHttpsUrl(
+  path: string,
+  params: Record<string, string | boolean | undefined>,
+): string {
+  const cleanPath = path.replace(/^\/+/, '');
+  const query = buildQueryString(params);
+  return query
+    ? `${WEB_BASE_URL}/${cleanPath}?${query}`
+    : `${WEB_BASE_URL}/${cleanPath}`;
+}
+
+function buildIntentUrl(
+  path: string,
+  params: Record<string, string | boolean | undefined>,
+  browserFallbackUrl: string,
+): string {
+  const query = buildQueryString(params);
+  const normalizedPath = path.replace(/^\/+/, '');
+  const querySuffix = query ? `?${query}` : '';
+
+  return `intent://${normalizedPath}${querySuffix}#Intent;scheme=badihi;package=${APP_PACKAGE_NAME};S.browser_fallback_url=${encodeURIComponent(browserFallbackUrl)};end`;
+}
+
 export function getVerifyEmailSuccessPage(): string {
+  const appParams = {
+    success: true,
+    verified: true,
+  };
+  const customScheme = JSON.stringify(
+    buildCustomScheme('login', appParams),
+  );
+  const intentUrl = JSON.stringify(
+    buildIntentUrl('login', appParams, PLAY_STORE_URL),
+  );
+
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="ar" dir="rtl">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Email Verified</title>
+      <title>تم تأكيد الحساب</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -74,10 +136,10 @@ export function getVerifyEmailSuccessPage(): string {
     <body>
       <div class="container">
         <div class="success-icon">✅</div>
-        <h1>Email verified successfully!</h1>
-        <p>Opening the app...</p>
+        <h1>تم تأكيد حسابك بنجاح</h1>
+        <p>يمكنك الآن الرجوع إلى التطبيق وتسجيل الدخول بالبيانات التي أنشأتها.</p>
         <div class="spinner"></div>
-        <button class="open-app-btn" onclick="openApp()">Open app</button>
+        <button class="open-app-btn" onclick="openApp()">الرجوع إلى التطبيق</button>
       </div>
       <script>
         let appOpened = false;
@@ -87,9 +149,8 @@ export function getVerifyEmailSuccessPage(): string {
         });
 
         function openApp() {
-          const customScheme = 'badihi://email-verified?success=true';
-          const intentUrl = 'intent://verify-email?success=true#Intent;scheme=https;package=com.badihi.app;S.browser_fallback_url=https://play.google.com/store/apps/details?id=com.badihi.app;end';
-          const universalLink = 'https://api.badihy.com/verify-email?success=true&verified=true';
+          const customScheme = ${customScheme};
+          const intentUrl = ${intentUrl};
           const isAndroid = /Android/i.test(navigator.userAgent);
 
           if (isAndroid) {
@@ -102,12 +163,6 @@ export function getVerifyEmailSuccessPage(): string {
             }, 500);
           } else {
             window.location.href = customScheme;
-
-            setTimeout(function() {
-              if (!appOpened && document.hasFocus()) {
-                window.location.href = universalLink;
-              }
-            }, 500);
           }
         }
 
@@ -123,11 +178,11 @@ export function getVerifyEmailSuccessPage(): string {
 export function getVerifyEmailErrorPage(): string {
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="ar" dir="rtl">
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Verification Error</title>
+      <title>فشل التحقق</title>
       <style>
         ${sharedStyles}
         body { color: white; }
@@ -141,8 +196,8 @@ export function getVerifyEmailErrorPage(): string {
     <body>
       <div class="container">
         <div class="error-icon">❌</div>
-        <h1>Verification failed</h1>
-        <p>The link is invalid or has expired. Please request a new verification link.</p>
+        <h1>فشل تأكيد الحساب</h1>
+        <p>رابط التفعيل غير صالح أو انتهت صلاحيته. من فضلك اطلب رابط تفعيل جديد.</p>
       </div>
     </body>
     </html>
@@ -173,9 +228,25 @@ export function getInvalidResetPasswordLinkPage(): string {
   `;
 }
 
-export function getResetPasswordPage(token: string): string {
-  const encodedToken = encodeURIComponent(token);
+function getPasswordPage(
+  token: string,
+  options: {
+    title: string;
+    heading: string;
+    buttonLabel: string;
+    infoText: string;
+    appPath: 'reset-password';
+    browserPath: 'reset-password';
+  },
+): string {
   const tokenJson = JSON.stringify(token);
+  const playStoreUrl = JSON.stringify(PLAY_STORE_URL);
+  const browserFallbackUrl = JSON.stringify(
+    buildHttpsUrl(options.browserPath, {
+      token,
+      openAppAttempted: true,
+    }),
+  );
 
   return `
     <!DOCTYPE html>
@@ -183,7 +254,7 @@ export function getResetPasswordPage(token: string): string {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Reset Password</title>
+      <title>${options.title}</title>
       <style>
         ${sharedStyles}
         h1 {
@@ -261,36 +332,65 @@ export function getResetPasswordPage(token: string): string {
     </head>
     <body>
       <div class="container">
-        <h1>Reset Password</h1>
+        <h1>${options.heading}</h1>
         <div id="message" class="message"></div>
         <form id="resetForm" onsubmit="handleSubmit(event)">
           <input type="hidden" id="token" value="${token}">
           <input type="password" id="newPassword" placeholder="New password" required>
           <input type="password" id="confirmPassword" placeholder="Confirm password" required>
-          <button type="submit">Reset password</button>
+          <button type="submit">${options.buttonLabel}</button>
         </form>
-        <p class="info">If you are using the mobile app, it may open automatically.</p>
+        <p class="info">${options.infoText}</p>
       </div>
       <script>
         let appOpened = false;
         const resetToken = ${tokenJson};
+        const playStoreUrl = ${playStoreUrl};
+        const browserFallbackUrl = ${browserFallbackUrl};
 
         window.addEventListener('blur', function() {
           appOpened = true;
         });
 
-        function openApp() {
-          const customScheme = 'badihi://reset-password?token=${encodedToken}';
-          const fallbackUrl = 'https://api.badihy.com/reset-password?token=${encodedToken}&openAppAttempted=1';
-          const intentUrl = 'intent://api.badihy.com/reset-password?token=${encodedToken}#Intent;scheme=https;package=com.badihi.app;S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
+        function buildQuery(params) {
+          const searchParams = new URLSearchParams();
+
+          Object.entries(params).forEach(function(entry) {
+            const key = entry[0];
+            const value = entry[1];
+
+            if (value === undefined || value === null || value === '') {
+              return;
+            }
+
+            searchParams.set(key, String(value));
+          });
+
+          return searchParams.toString();
+        }
+
+        function buildCustomScheme(path, params) {
+          const query = buildQuery(params);
+          return query ? 'badihi://' + path + '?' + query : 'badihi://' + path;
+        }
+
+        function buildIntentUrl(path, params, fallbackUrl) {
+          const query = buildQuery(params);
+          const querySuffix = query ? '?' + query : '';
+
+          return 'intent://' + path + querySuffix + '#Intent;scheme=badihi;package=${APP_PACKAGE_NAME};S.browser_fallback_url=' + encodeURIComponent(fallbackUrl) + ';end';
+        }
+
+        function openApp(params, fallbackUrl) {
+          const customScheme = buildCustomScheme('${options.appPath}', params);
+          const intentUrl = buildIntentUrl('${options.appPath}', params, fallbackUrl);
           const isAndroid = /Android/i.test(navigator.userAgent);
 
           if (isAndroid) {
             window.location.href = intentUrl;
-            return;
+          } else {
+            window.location.href = customScheme;
           }
-
-          window.location.href = customScheme;
         }
 
         window.onload = function() {
@@ -298,9 +398,22 @@ export function getResetPasswordPage(token: string): string {
           const alreadyAttempted = params.get('openAppAttempted') === '1';
 
           if (!alreadyAttempted) {
-            setTimeout(openApp, 300);
+            setTimeout(function() {
+              openApp({ token: resetToken }, browserFallbackUrl);
+            }, 300);
           }
         };
+
+        function returnToAppAfterSuccess(data) {
+          const params = {
+            success: true,
+            passwordUpdated: true,
+            token: data && data.accessToken,
+            refreshToken: data && data.refreshToken,
+          };
+
+          openApp(params, playStoreUrl);
+        }
 
         async function handleSubmit(event) {
           event.preventDefault();
@@ -332,8 +445,11 @@ export function getResetPasswordPage(token: string): string {
 
             if (response.ok) {
               messageDiv.className = 'message success';
-              messageDiv.textContent = 'Password reset successfully!';
+              messageDiv.textContent = 'Password reset successfully! Returning to the app...';
               document.getElementById('resetForm').reset();
+              setTimeout(function() {
+                returnToAppAfterSuccess(data);
+              }, 300);
             } else {
               messageDiv.className = 'message error';
               messageDiv.textContent = data.message || 'Something went wrong';
@@ -347,4 +463,15 @@ export function getResetPasswordPage(token: string): string {
     </body>
     </html>
   `;
+}
+
+export function getResetPasswordPage(token: string): string {
+  return getPasswordPage(token, {
+    title: 'Reset Password',
+    heading: 'Reset Password',
+    buttonLabel: 'Reset password',
+    infoText: 'If you are using the mobile app, it may open automatically.',
+    appPath: 'reset-password',
+    browserPath: 'reset-password',
+  });
 }

@@ -37,11 +37,15 @@ const EXACT_MESSAGES: Record<string, string> = {
   'Invalid or expired verification token':
     'رابط تفعيل البريد غير صالح أو انتهت صلاحيته',
   'Invalid or expired ID token': 'رمز تسجيل الدخول غير صالح أو انتهت صلاحيته',
+  'Please verify your email before logging in':
+    'يرجى تفعيل بريدك الإلكتروني قبل تسجيل الدخول',
   'Google account email is required': 'بريد حساب جوجل مطلوب',
   'Unable to create or retrieve the user':
     'تعذر إنشاء المستخدم أو الوصول إلى بياناته',
   'idToken is required': 'رمز تسجيل الدخول بجوجل مطلوب',
   'Profile image is required': 'الصورة الشخصية مطلوبة',
+  'The lesson linked to this slide cannot be changed':
+    'لا يمكن تغيير الدرس المرتبط بهذا السلايد',
   'Username is already in use': 'اسم المستخدم مستخدم بالفعل',
   'You cannot access another user\'s data':
     'لا يمكنك الوصول إلى بيانات مستخدم آخر',
@@ -70,6 +74,22 @@ function hasArabic(message: string): boolean {
 function translateKnownPattern(message: string): string | undefined {
   if (/^Duplicate value for field/i.test(message)) {
     return 'هذه القيمة مستخدمة بالفعل';
+  }
+
+  if (/^Lesson with id .+ was not found$/i.test(message)) {
+    return 'الدرس المطلوب غير موجود';
+  }
+
+  if (/^Slide with id .+ was not found$/i.test(message)) {
+    return 'السلايد المطلوب غير موجود';
+  }
+
+  if (/^Failed to upload report image/i.test(message)) {
+    return 'تعذر رفع صورة البلاغ';
+  }
+
+  if (/^Invalid file:/i.test(message)) {
+    return 'الملف المرسل غير صالح';
   }
 
   if (/duplicate key/i.test(message)) {

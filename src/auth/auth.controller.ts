@@ -5,7 +5,6 @@ import {
   UseGuards,
   Get,
   Request,
-  Query,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from './decorators/public.decorator';
@@ -23,12 +22,12 @@ import {
 import { TokenResponseDto } from './dto/token-response.dto';
 import { MobileGoogleSignInDto } from './dto/mobile-google-sign-in.dto';
 
-@Public()
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -43,21 +42,19 @@ export class AuthController {
     return this.authService.refreshTokens(userId, refreshToken);
   }
 
+  @Public()
   @Post('forgot-password')
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
+  @Public()
   @Post('reset-password')
   async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
     return this.authService.resetPassword(resetPasswordDto);
   }
 
-  @Get('verify-email')
-  async verifyEmail(@Query('token') token: string) {
-    return this.authService.verifyEmail(token);
-  }
-
+  @Public()
   @Post('mobile')
   @ApiOperation({ summary: 'Google Sign-In for mobile (Android/iOS)' })
   @ApiBody({ type: MobileGoogleSignInDto })

@@ -72,6 +72,22 @@ function createCertificateNumber(prefix: string) {
   return `CERT-${prefix}-${Date.now()}-${randomPart}`;
 }
 
+function calculateEnrollmentProgress(
+  totalLessons: number,
+  totalQuizzes: number,
+  completedLessons: number,
+  completedQuizzes: number,
+) {
+  const totalItems = totalLessons + totalQuizzes;
+  if (totalItems === 0) {
+    return 0;
+  }
+
+  return Math.round(
+    ((completedLessons + completedQuizzes) / totalItems) * 100,
+  );
+}
+
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
@@ -140,6 +156,9 @@ async function bootstrap() {
 
     const jsCourse = catalog.courses.javaScriptEssentials;
     const reactCourse = catalog.courses.reactFundamentals;
+    const saraReactCompletedLessons = reactCourse.lessons.slice(0, 3);
+    const omarJsCompletedLessons = jsCourse.lessons.slice(0, 2);
+    const nourReactCompletedLessons = reactCourse.lessons;
 
     const [saraJsEnrollment, , , nourReactEnrollment] =
       await models.enrollmentModel.create([
@@ -148,7 +167,12 @@ async function bootstrap() {
         course: jsCourse.course._id,
         completedLessons: jsCourse.lessons.map((lesson) => lesson._id),
         completedQuizzes: jsCourse.quizzes.map((quiz) => quiz._id),
-        progress: 100,
+        progress: calculateEnrollmentProgress(
+          jsCourse.lessons.length,
+          jsCourse.quizzes.length,
+          jsCourse.lessons.length,
+          jsCourse.quizzes.length,
+        ),
         isCompleted: true,
         rating: 5,
         comment: 'Excellent course for beginners.',
@@ -156,9 +180,14 @@ async function bootstrap() {
       {
         user: studentOne._id,
         course: reactCourse.course._id,
-        completedLessons: [reactCourse.lessons[0]._id],
+        completedLessons: saraReactCompletedLessons.map((lesson) => lesson._id),
         completedQuizzes: [],
-        progress: 33,
+        progress: calculateEnrollmentProgress(
+          reactCourse.lessons.length,
+          reactCourse.quizzes.length,
+          saraReactCompletedLessons.length,
+          0,
+        ),
         isCompleted: false,
         rating: 4,
         comment: 'Great start, looking forward to the next lessons.',
@@ -166,9 +195,14 @@ async function bootstrap() {
       {
         user: studentTwo._id,
         course: jsCourse.course._id,
-        completedLessons: [jsCourse.lessons[0]._id],
+        completedLessons: omarJsCompletedLessons.map((lesson) => lesson._id),
         completedQuizzes: [],
-        progress: 33,
+        progress: calculateEnrollmentProgress(
+          jsCourse.lessons.length,
+          jsCourse.quizzes.length,
+          omarJsCompletedLessons.length,
+          0,
+        ),
         isCompleted: false,
         rating: 4,
         comment: 'The examples are very clear.',
@@ -176,9 +210,14 @@ async function bootstrap() {
       {
         user: studentThree._id,
         course: reactCourse.course._id,
-        completedLessons: reactCourse.lessons.map((lesson) => lesson._id),
+        completedLessons: nourReactCompletedLessons.map((lesson) => lesson._id),
         completedQuizzes: reactCourse.quizzes.map((quiz) => quiz._id),
-        progress: 100,
+        progress: calculateEnrollmentProgress(
+          reactCourse.lessons.length,
+          reactCourse.quizzes.length,
+          nourReactCompletedLessons.length,
+          reactCourse.quizzes.length,
+        ),
         isCompleted: true,
         rating: 5,
         comment: 'The React walkthrough is practical and easy to follow.',

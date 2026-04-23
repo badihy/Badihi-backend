@@ -1,11 +1,10 @@
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserController } from './user.controller';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './schemas/user.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { EmailService } from '../common/services/email.service';
-import { AuthModule } from '../auth/auth.module';
 import { BunnyService } from '../common/services/bunny.service';
 import {
   Enrollment,
@@ -28,7 +27,6 @@ import { Bookmark, BookmarkSchema } from '../bookmarks/schemas/bookmark.schema';
       { name: Bookmark.name, schema: BookmarkSchema },
     ]),
     JwtModule,
-    forwardRef(() => AuthModule),
   ],
   controllers: [UserController],
   providers: [UserService, EmailService, BunnyService],

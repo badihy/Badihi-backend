@@ -4,8 +4,6 @@ import {
   Injectable,
   Logger,
   NotFoundException,
-  forwardRef,
-  Inject,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -15,9 +13,7 @@ import * as crypto from 'crypto';
 import * as bcrypt from 'bcryptjs';
 import { JwtService } from '@nestjs/jwt';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { LoginDto } from './dto/login.dto';
 import { EmailService } from '../common/services/email.service';
-import { AuthService } from '../auth/auth.service';
 import { UpdateUsernameDto } from './dto/update-username.dto';
 import { UpdateProfileImageDto } from './dto/update-profile-image.dto';
 import { BunnyService } from '../common/services/bunny.service';
@@ -52,20 +48,17 @@ export class UserService {
     private readonly bookmarkModel: Model<BookmarkDocument>,
     @InjectConnection() private readonly connection: Connection,
     private readonly emailService: EmailService,
-    @Inject(forwardRef(() => AuthService))
-    private readonly authService: AuthService,
     private readonly bunnyService: BunnyService,
   ) {}
 
   /**
-   * Creates a new user account and automatically logs them in.
+   * Creates a new user account and asks the user to verify email first.
    * - Generates a unique username from email
    * - Hashes the password
    * - Creates user with isVerified: false by default
    * - Generates verification token and sends welcome email with verification link
-   * - Issues access + refresh tokens so the client is logged in immediately
    * @param createUserDto User creation data
-   * @returns { token, refreshToken, user } — same shape as the login response
+   * @returns A confirmation message instructing the client to verify email
    */
   async create(createUserDto: CreateUserDto, file?: Express.Multer.File) {
     const username =
@@ -99,25 +92,13 @@ export class UserService {
       );
     }
 
-    // Auto-login: issue access & refresh tokens right after registration
-    const tokens = await this.authService.getTokens(user._id, user.email);
-    await this.authService.updateRefreshToken(
-      user._id.toString(),
-      tokens.refreshToken,
-    );
-
     return {
-      token: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
+      message:
+        'تم إنشاء الحساب بنجاح. من فضلك افحص بريدك الإلكتروني لتأكيد الحساب أولاً',
       user: {
         _id: user._id,
-        username: user.username,
         email: user.email,
-        phone: user.phone,
-        profileImage: user.profileImage,
         isVerified: user.isVerified,
-        fullName: user.fullName,
-        role: user.role ?? UserRole.USER,
       },
     };
   }

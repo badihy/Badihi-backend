@@ -157,6 +157,12 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (!user.isVerified) {
+      throw new ForbiddenException(
+        'Please verify your email before logging in',
+      );
+    }
+
     const tokens = await this.getTokens(user._id, user.email);
     await this.updateRefreshToken(user._id.toString(), tokens.refreshToken);
 
@@ -280,14 +286,24 @@ export class AuthService {
       resetPasswordDto.newPassword,
     );
 
-    return { message: 'Password reset successfully' };
+    const tokens = await this.issueTokenPairForUser(user);
+
+    return {
+      message: 'Password reset successfully',
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: tokens.user,
+    };
   }
   async verifyEmail(token: string) {
     const user = await this.userService.verifyEmail(token);
     if (!user) {
       throw new BadRequestException('Invalid or expired verification token');
     }
-    return { message: 'Email verified successfully' };
+
+    return {
+      message: 'Email verified successfully',
+    };
   }
 
   async googleSignInMobile(idToken: string): Promise<TokenResponseDto> {

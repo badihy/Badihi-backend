@@ -49,7 +49,7 @@ describe('AppController', () => {
 
     expect(authServiceMock.verifyEmail).toHaveBeenCalledWith('token-123');
     expect(res.send).toHaveBeenCalledWith(
-      expect.stringContaining('Email verified successfully!'),
+      expect.stringContaining('تم تأكيد حسابك بنجاح'),
     );
   });
 

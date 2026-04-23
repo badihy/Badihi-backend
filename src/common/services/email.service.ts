@@ -16,7 +16,6 @@ export class EmailService {
    * @param token Verification token
    */
   async sendWelcomeEmail(email: string, name: string, token: string) {
-    // Verification link (Direct App Link)
     const appLink = `https://api.badihy.com/verify-email?token=${token}`;
 
     const html = getWelcomeEmailHtml(name, appLink);
@@ -29,8 +28,6 @@ export class EmailService {
   }
 
   async sendResetPasswordEmail(email: string, name: string, token: string) {
-    // App Link for Reset Password
-    // Assuming app handles /reset-password?token=...
     const appLink = `https://api.badihy.com/reset-password?token=${token}`;
 
     const html = getResetPasswordEmailHtml(name, appLink);
