@@ -33,6 +33,7 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Public()
   @ApiBearerAuth('JWT-refresh')
   @UseGuards(AuthGuard('jwt-refresh'))
   @Get('refresh')

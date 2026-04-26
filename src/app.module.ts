@@ -15,6 +15,7 @@ import { SlidesModule } from './slides/slides.module';
 import { ReportsModule } from './reports/reports.module';
 import { CertificateModule } from './certificate/certificate.module';
 import { BookmarksModule } from './bookmarks/bookmarks.module';
+import { AdminModule } from './admin/admin.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { RolesGuard } from './auth/guards/roles.guard';
 @Module({
@@ -68,6 +69,7 @@ import { RolesGuard } from './auth/guards/roles.guard';
     ReportsModule,
     CertificateModule,
     BookmarksModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

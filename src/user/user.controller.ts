@@ -49,8 +49,8 @@ export class UserController {
 
   @Get()
   @ApiOperation({ summary: 'Get the authenticated user profile' })
-  async getProfile(@CurrentUser('id') userId: string) {
-    return await this.userService.findById(userId);
+  async getProfile() {
+    return await this.userService.findAll();
   }
 
   @Get('me')
