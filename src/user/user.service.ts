@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -35,6 +36,9 @@ import { UserRole } from '../auth/enums/user-role.enum';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+
+  private readonly sensitiveUserProjection =
+    '-password -refreshToken -resetPasswordToken -resetPasswordExpires -verificationToken -verificationTokenExpires';
 
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
@@ -105,6 +109,120 @@ export class UserService {
 
   async findAll() {
     return await this.userModel.find();
+  }
+
+  async findUsersForAdmin(query: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    role?: UserRole;
+  }) {
+    const page = query.page ?? 1;
+    const limit = Math.min(query.limit ?? 10, 100);
+    const filter: Record<string, unknown> = {};
+    if (query.role) {
+      filter.role = query.role;
+    }
+    if (query.search?.trim()) {
+      const s = this.escapeRegExp(query.search.trim());
+      filter.$or = [
+        { email: new RegExp(s, 'i') },
+        { fullName: new RegExp(s, 'i') },
+        { username: new RegExp(s, 'i') },
+      ];
+    }
+    const skip = (page - 1) * limit;
+    const [items, total] = await Promise.all([
+      this.userModel
+        .find(filter)
+        .select(this.sensitiveUserProjection)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean()
+        .exec(),
+      this.userModel.countDocuments(filter).exec(),
+    ]);
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    return { items, total, page, limit, totalPages };
+  }
+
+  async findByIdForAdmin(id: string) {
+    const user = await this.userModel
+      .findById(id)
+      .select(this.sensitiveUserProjection)
+      .lean()
+      .exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
+  }
+
+  async adminUpdateUser(id: string, patch: {
+    role?: UserRole;
+    isVerified?: boolean;
+    fullName?: string;
+    phone?: string;
+  }) {
+    const update: Record<string, unknown> = {};
+    if (patch.role !== undefined) update.role = patch.role;
+    if (patch.isVerified !== undefined) update.isVerified = patch.isVerified;
+    if (patch.fullName !== undefined) update.fullName = patch.fullName;
+    if (patch.phone !== undefined) update.phone = patch.phone;
+    if (Object.keys(update).length === 0) {
+      throw new BadRequestException('No updatable fields provided');
+    }
+
+    const existing = await this.userModel.findById(id).exec();
+    if (!existing) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (
+      patch.role === UserRole.USER &&
+      existing.role === UserRole.ADMIN
+    ) {
+      const adminCount = await this.userModel.countDocuments({
+        role: UserRole.ADMIN,
+      });
+      if (adminCount <= 1) {
+        throw new ForbiddenException('Cannot demote the last admin user');
+      }
+    }
+
+    const updated = await this.userModel
+      .findByIdAndUpdate(id, { $set: update }, { new: true })
+      .select(this.sensitiveUserProjection)
+      .lean()
+      .exec();
+
+    if (!updated) {
+      throw new NotFoundException('User not found');
+    }
+
+    return updated;
+  }
+
+  async removeAsAdmin(targetId: string, actorId: string) {
+    if (targetId === actorId) {
+      throw new ForbiddenException(
+        'You cannot delete your own account from the admin panel',
+      );
+    }
+    const target = await this.userModel.findById(targetId).exec();
+    if (!target) {
+      throw new NotFoundException('User not found');
+    }
+    if (target.role === UserRole.ADMIN) {
+      const adminCount = await this.userModel.countDocuments({
+        role: UserRole.ADMIN,
+      });
+      if (adminCount <= 1) {
+        throw new ForbiddenException('Cannot delete the last admin user');
+      }
+    }
+    return this.remove(targetId);
   }
 
   async findById(id: string) {
@@ -306,6 +424,10 @@ export class UserService {
       { $addToSet: { enrolledCourses: courseId } },
       { new: true },
     );
+  }
+
+  private escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
   private async ensureUsernameAvailable(

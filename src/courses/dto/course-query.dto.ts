@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsBooleanString } from 'class-validator';
+import { IsOptional, IsEnum, IsBoolean } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export enum PopulateLevel {
@@ -23,11 +23,25 @@ export class CourseQueryDto {
   populate?: PopulateLevel;
 
   @ApiPropertyOptional({
-    description: 'Include category information',
-    example: 'true',
+    description:
+      'Include category information (query: true/false, 1/0, or omit)',
+    example: true,
   })
   @IsOptional()
-  @IsBooleanString()
-  @Transform(({ value }) => value === 'true')
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') {
+      return undefined;
+    }
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const v = value.toLowerCase().trim();
+      if (v === 'true' || v === '1') return true;
+      if (v === 'false' || v === '0') return false;
+    }
+    return value;
+  })
+  @IsBoolean()
   includeCategory?: boolean;
 }
