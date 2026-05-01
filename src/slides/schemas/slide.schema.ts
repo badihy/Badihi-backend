@@ -6,46 +6,45 @@ import mongoose, { Document } from 'mongoose';
 @Schema({ timestamps: true })
 export class Slide {
   @Prop()
-  title: string;
+  title?: string;
 
-  @Prop({ type: String, enum: SlideType })
+  @Prop({ type: String, enum: SlideType, required: true })
   type: SlideType;
 
-  @Prop({
-    type: String,
-    required: false,
-  })
+  @Prop({ required: false })
   textContent?: string;
 
-  @Prop({
-    type: String,
-    required: false,
-  })
+  @Prop({ required: false })
   imageUrl?: string;
 
-  @Prop({
-    type: Number,
-    required: true,
-  })
+  @Prop({ type: Number, required: true })
   orderIndex: number;
 
-  @Prop({
-    type: [String],
-    required: false,
-  })
-  questions?: string[];
+  @Prop({ required: false })
+  golden_info?: string;
 
-  @Prop({
-    type: String,
-    required: false,
-  })
-  questionHint?: string;
+  @Prop({ required: false })
+  explanation?: string;
 
-  @Prop({
-    type: String,
-    required: false,
-  })
+  // Question fields
+  @Prop({ required: false })
+  question?: string;
+
+  @Prop({ type: [String], required: false })
+  choices?: string[];
+
+  @Prop({ required: false })
   answer?: string;
+
+  // Quote fields
+  @Prop({ required: false })
+  quotation?: string;
+
+  @Prop({ required: false })
+  authorName?: string;
+
+  @Prop({ required: false })
+  authorJob?: string;
 
   @Prop({ default: false })
   isCompleted: boolean;

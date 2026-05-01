@@ -10,6 +10,7 @@ import { UpdateSlideDto } from './dto/update-slide.dto';
 import { Slide, SlideDocument } from './schemas/slide.schema';
 import { Lesson, LessonDocument } from '../courses/schemas/lesson.schema';
 import { EnrollmentsService } from '../courses/enrollments.service';
+import { SlideType } from './types/slide-types.enum';
 
 @Injectable()
 export class SlidesService {
@@ -23,7 +24,7 @@ export class SlidesService {
   /**
    * Create a slide and link it to its parent lesson
    */
-  async create(createSlideDto: CreateSlideDto): Promise<Slide> {
+  async create(createSlideDto: CreateSlideDto): Promise<any> {
     const lesson = await this.lessonModel
       .findById(createSlideDto.lesson)
       .exec();
@@ -31,6 +32,17 @@ export class SlidesService {
       throw new NotFoundException(
         `Lesson with id ${createSlideDto.lesson} was not found`,
       );
+    }
+
+    // Validate Question Slide
+    if (createSlideDto.type === SlideType.QUESTION) {
+      if (
+        !createSlideDto.choices ||
+        !createSlideDto.answer ||
+        !createSlideDto.choices.includes(createSlideDto.answer)
+      ) {
+        throw new BadRequestException('يجب أن تكون الإجابة ضمن الاختيارات');
+      }
     }
 
     const slide = await this.slideModel.create({
@@ -44,13 +56,13 @@ export class SlidesService {
       })
       .exec();
 
-    return slide;
+    return this.cleanSlide(slide);
   }
 
   /**
    * Get all slides (optionally by lessonId)
    */
-  async findAll(lessonId?: string, userId?: string): Promise<Slide[]> {
+  async findAll(lessonId?: string, userId?: string): Promise<any[]> {
     const filter: any = {};
 
     if (lessonId) {
@@ -69,13 +81,17 @@ export class SlidesService {
       throw new BadRequestException('يجب تحديد الدرس لعرض السلايدز');
     }
 
-    return this.slideModel.find(filter).sort({ orderIndex: 1 }).exec();
+    const slides = await this.slideModel
+      .find(filter)
+      .sort({ orderIndex: 1 })
+      .exec();
+    return slides.map((slide) => this.cleanSlide(slide));
   }
 
   /**
    * Get one slide by id
    */
-  async findOne(id: string, userId?: string): Promise<Slide> {
+  async findOne(id: string, userId?: string): Promise<any> {
     const slide = await this.slideModel.findById(id).exec();
     if (!slide) {
       throw new NotFoundException(`Slide with id ${id} was not found`);
@@ -86,27 +102,49 @@ export class SlidesService {
         slide.lesson.toString(),
       );
     }
-    return slide;
+    return this.cleanSlide(slide);
   }
 
   /**
    * Update slide by id
    * - Does not allow changing lesson to avoid inconsistent ordering/linking.
    */
-  async update(id: string, updateSlideDto: UpdateSlideDto): Promise<Slide> {
+  async update(id: string, updateSlideDto: UpdateSlideDto): Promise<any> {
     if ((updateSlideDto as any).lesson) {
       throw new BadRequestException(
         'The lesson linked to this slide cannot be changed',
       );
     }
 
+    const currentSlide = await this.slideModel.findById(id).exec();
+    if (!currentSlide) {
+      throw new NotFoundException(`Slide with id ${id} was not found`);
+    }
+
+    // Validate Question Slide if type is changed to QUESTION or if answer/choices are updated
+    const finalType = updateSlideDto.type || currentSlide.type;
+    if (finalType === SlideType.QUESTION) {
+      const finalChoices = updateSlideDto.choices || currentSlide.choices;
+      const finalAnswer = updateSlideDto.answer || currentSlide.answer;
+
+      if (
+        !finalChoices ||
+        !finalAnswer ||
+        !finalChoices.includes(finalAnswer)
+      ) {
+        throw new BadRequestException('يجب أن تكون الإجابة ضمن الاختيارات');
+      }
+    }
+
     const updated = await this.slideModel
       .findByIdAndUpdate(id, updateSlideDto, { new: true })
       .exec();
+
     if (!updated) {
       throw new NotFoundException(`Slide with id ${id} was not found`);
     }
-    return updated;
+
+    return this.cleanSlide(updated);
   }
 
   /**
@@ -124,5 +162,53 @@ export class SlidesService {
     await this.slideModel.findByIdAndDelete(id).exec();
 
     return { message: 'Slide deleted successfully' };
+  }
+
+  /**
+   * Clean slide object based on its type
+   */
+  private cleanSlide(slide: SlideDocument): any {
+    const obj = slide.toObject();
+    const type = obj.type;
+
+    const commonFields = [
+      '_id',
+      'id',
+      'type',
+      'orderIndex',
+      'lesson',
+      'isCompleted',
+      'createdAt',
+      'updatedAt',
+      '__v',
+    ];
+
+    const fieldsByType = {
+      [SlideType.TEXT]: [
+        'title',
+        'textContent',
+        'imageUrl',
+        'golden_info',
+        'explanation',
+      ],
+      [SlideType.QUESTION]: [
+        'question',
+        'choices',
+        'answer',
+        'golden_info',
+        'explanation',
+      ],
+      [SlideType.QUOTE]: ['quotation', 'authorName', 'authorJob'],
+    };
+
+    const allowedFields = [...commonFields, ...(fieldsByType[type] || [])];
+
+    Object.keys(obj).forEach((key) => {
+      if (!allowedFields.includes(key)) {
+        delete obj[key];
+      }
+    });
+
+    return obj;
   }
 }

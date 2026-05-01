@@ -45,9 +45,9 @@ type SlideSeed = {
   type: SlideType;
   textContent?: string;
   imageUrl?: string;
-  questions?: string[];
+  choices?: string[];
   answer?: string;
-  questionHint?: string;
+  explanation?: string;
 };
 
 type LessonSeed = {
@@ -125,9 +125,9 @@ async function createLessonWithSlides(
       type: slideSeed.type,
       textContent: slideSeed.textContent,
       imageUrl: slideSeed.imageUrl,
-      questions: slideSeed.questions,
+      choices: slideSeed.choices,
       answer: slideSeed.answer,
-      questionHint: slideSeed.questionHint,
+      explanation: slideSeed.explanation,
       orderIndex: slideIndex + 1,
       lesson: lesson._id,
     });
@@ -318,7 +318,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'let, const, and when to use each one',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Use const by default. Switch to let only when the variable must be reassigned. This simple habit makes code easier to reason about and prevents accidental changes.',
             },
@@ -335,9 +335,9 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Which keyword is the safest default when you do not plan to reassign a variable?',
-              questions: ['var', 'let', 'const', 'static'],
+              choices: ['var', 'let', 'const', 'static'],
               answer: 'const',
-              questionHint:
+              explanation:
                 'Choose the keyword that signals the value should stay stable.',
             },
           ],
@@ -356,7 +356,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Prefer strict equality',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Use === and !== in almost all cases. They compare both value and type, which helps you avoid surprising coercion bugs such as 0 == false returning true.',
             },
@@ -371,14 +371,14 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'What does an if statement need in order to decide whether to run its block?',
-              questions: [
+              choices: [
                 'A function definition',
                 'A boolean-like condition',
                 'A loop counter',
                 'A return value from another file',
               ],
               answer: 'A boolean-like condition',
-              questionHint:
+              explanation:
                 'The if statement checks whether something is truthy or falsy.',
             },
           ],
@@ -412,7 +412,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Scope keeps variables predictable',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Variables declared inside a function stay inside that function unless you return them. This local scope prevents naming collisions and keeps side effects easier to control.',
             },
@@ -421,14 +421,14 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'What is the main benefit of returning a value from a function?',
-              questions: [
+              choices: [
                 'It allows the function result to be reused elsewhere',
                 'It makes the function run faster automatically',
                 'It turns the function into a loop',
                 'It removes the need for parameters',
               ],
               answer: 'It allows the function result to be reused elsewhere',
-              questionHint:
+              explanation:
                 'Think about how another part of the app can consume the output.',
             },
           ],
@@ -455,7 +455,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Choose the structure that matches the question',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'If you ask "Which item comes next?" an array usually fits. If you ask "What details does this thing have?" an object usually fits.',
             },
@@ -464,9 +464,9 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Which structure is better for representing one user profile with fields such as name, email, and age?',
-              questions: ['Array', 'Object', 'String', 'Boolean'],
+              choices: ['Array', 'Object', 'String', 'Boolean'],
               answer: 'Object',
-              questionHint:
+              explanation:
                 'You want named properties rather than numeric indexes.',
             },
           ],
@@ -500,7 +500,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Keep UI updates small and intentional',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Instead of rebuilding everything, target the smallest element that needs to change. This keeps your code easier to debug and your interface easier to trust.',
             },
@@ -509,7 +509,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'What is the main purpose of addEventListener on a button element?',
-              questions: [
+              choices: [
                 'To style the button automatically',
                 'To listen for user interaction and run code in response',
                 'To convert HTML into JSON',
@@ -517,7 +517,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'To listen for user interaction and run code in response',
-              questionHint:
+              explanation:
                 'Think about what happens after the user clicks or types.',
             },
           ],
@@ -536,7 +536,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'async or await makes promise code easier to read',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'With async functions and await, you can write asynchronous flows in a top-to-bottom style that feels close to synchronous code while still staying non-blocking.',
             },
@@ -551,7 +551,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Why should API calls usually be wrapped in try and catch when using await?',
-              questions: [
+              choices: [
                 'Because await only works inside loops',
                 'Because network requests can fail and need graceful error handling',
                 'Because try and catch makes the response faster',
@@ -559,7 +559,7 @@ const javaScriptCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'Because network requests can fail and need graceful error handling',
-              questionHint:
+              explanation:
                 'Think about timeouts, bad responses, and offline users.',
             },
           ],
@@ -696,7 +696,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Componentization scales teams better',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Breaking an interface into reusable pieces makes testing, collaboration, and iteration easier because each part has a clear responsibility.',
             },
@@ -713,7 +713,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'What is the biggest advantage of a component-based approach?',
-              questions: [
+              choices: [
                 'Every file becomes shorter automatically',
                 'Reusable UI pieces become easier to manage and reason about',
                 'React removes the need for JavaScript',
@@ -721,7 +721,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'Reusable UI pieces become easier to manage and reason about',
-              questionHint:
+              explanation:
                 'Think about collaboration, reuse, and isolated responsibility.',
             },
           ],
@@ -746,7 +746,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Readable JSX comes from small components',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'If a component becomes too large to read comfortably, split one concept out. Small composition beats huge render functions.',
             },
@@ -755,7 +755,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Which statement about JSX is correct?',
-              questions: [
+              choices: [
                 'JSX can only contain static text',
                 'JSX can embed JavaScript expressions inside curly braces',
                 'JSX uses class instead of className',
@@ -763,7 +763,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'JSX can embed JavaScript expressions inside curly braces',
-              questionHint:
+              explanation:
                 'Think about how values appear inside rendered markup.',
             },
           ],
@@ -797,7 +797,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Do not mutate state directly',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'React relies on updates being expressed through setters such as setCount or setForm. Direct mutation often leads to stale UI and difficult bugs.',
             },
@@ -806,14 +806,14 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'When should a value usually live in state rather than a plain variable?',
-              questions: [
+              choices: [
                 'When changing it should trigger a UI update',
                 'When it contains a string',
                 'When it comes from CSS',
                 'When it should never change',
               ],
               answer: 'When changing it should trigger a UI update',
-              questionHint:
+              explanation:
                 'Think about rerendering and user-visible changes.',
             },
           ],
@@ -832,7 +832,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Not every calculation belongs in an effect',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'If a value can be derived directly from props and state during render, compute it there. Effects are for synchronization, not for ordinary calculations.',
             },
@@ -848,7 +848,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Why can missing dependencies in an effect cause bugs?',
-              questions: [
+              choices: [
                 'Because the component stops compiling',
                 'Because the effect may read stale values and stop syncing correctly',
                 'Because dependencies slow the browser too much',
@@ -856,7 +856,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'Because the effect may read stale values and stop syncing correctly',
-              questionHint:
+              explanation:
                 'Think about values changing while the effect logic stays outdated.',
             },
           ],
@@ -884,7 +884,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Lists need stable keys',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'When rendering arrays, each item should get a stable key from real data such as an id. Using array indexes as keys can create subtle UI bugs when the list changes.',
             },
@@ -899,7 +899,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'Why does React ask for a key when mapping an array into elements?',
-              questions: [
+              choices: [
                 'To style each item with CSS automatically',
                 'To help React track item identity across rerenders',
                 'To limit the array length',
@@ -907,7 +907,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'To help React track item identity across rerenders',
-              questionHint:
+              explanation:
                 'Think about insertions, deletions, and reordering.',
             },
           ],
@@ -932,7 +932,7 @@ const reactCourseSeed: CourseSeedDefinition = {
             },
             {
               title: 'Organize by responsibility, not by accident',
-              type: SlideType.GOLDEN_INFO,
+              type: SlideType.TEXT,
               textContent:
                 'Keep presentational pieces simple, push data access into clear boundaries, and avoid giant components that fetch, transform, and render everything alone.',
             },
@@ -941,7 +941,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               type: SlideType.QUESTION,
               textContent:
                 'What is a strong reason to extract a reusable component?',
-              questions: [
+              choices: [
                 'To create more files without changing behavior',
                 'To centralize repeated UI or behavior used in multiple places',
                 'To avoid using props entirely',
@@ -949,7 +949,7 @@ const reactCourseSeed: CourseSeedDefinition = {
               ],
               answer:
                 'To centralize repeated UI or behavior used in multiple places',
-              questionHint:
+              explanation:
                 'Think about consistency and future maintenance.',
             },
           ],
